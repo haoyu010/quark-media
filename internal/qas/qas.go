@@ -327,3 +327,79 @@ func UpsertTask(path, name, savePath, shareURL, passcode string) error {
 	raw["tasklist"] = list
 	return writeJSONAtomic(path, raw)
 }
+
+
+// LoadRaw returns full quark_config.json map.
+func LoadRaw(path string) (map[string]any, error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var raw map[string]any
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return nil, err
+	}
+	return raw, nil
+}
+
+// UpdateTaskShare updates tasklist item shareurl by name and/or old share id.
+func UpdateTaskShare(path, name, oldShare, newShare string) error {
+	raw, err := LoadRaw(path)
+	if err != nil {
+		raw = map[string]any{}
+	}
+	newShare = strings.TrimSpace(newShare)
+	if newShare == "" {
+		return fmt.Errorf("empty new share")
+	}
+	list := []any{}
+	switch v := raw["tasklist"].(type) {
+	case []any:
+		list = v
+	}
+	name = strings.TrimSpace(name)
+	oldShare = strings.TrimSpace(oldShare)
+	changed := false
+	for i, it := range list {
+		m, _ := it.(map[string]any)
+		if m == nil {
+			continue
+		}
+		tn := asStr(m["taskname"])
+		if tn == "" {
+			tn = asStr(m["name"])
+		}
+		su := asStr(m["shareurl"])
+		if su == "" {
+			su = asStr(m["share_url"])
+		}
+		match := false
+		if name != "" && tn == name {
+			match = true
+		}
+		if oldShare != "" && su == oldShare {
+			match = true
+		}
+		if !match {
+			continue
+		}
+		m["shareurl"] = newShare
+		m["shareurl_ban"] = nil
+		list[i] = m
+		changed = true
+	}
+	if !changed {
+		// append if named
+		if name == "" {
+			name = "replaced-task"
+		}
+		list = append(list, map[string]any{
+			"taskname": name,
+			"shareurl": newShare,
+			"savepath": "",
+			"runweek":  []int{1, 2, 3, 4, 5, 6, 7},
+		})
+	}
+	raw["tasklist"] = list
+	return writeJSONAtomic(path, raw)
+}

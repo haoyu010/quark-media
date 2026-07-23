@@ -16,6 +16,33 @@ type Hit struct {
 	Channel string `json:"channel"`
 }
 
+// NormalizeChannel turns t.me / telegram.me URLs into bare channel username/id.
+func NormalizeChannel(ch string) string {
+	ch = strings.TrimSpace(ch)
+	ch = strings.TrimPrefix(ch, "@")
+	low := strings.ToLower(ch)
+	for _, p := range []string{
+		"https://telegram.me/s/", "http://telegram.me/s/",
+		"https://t.me/s/", "http://t.me/s/",
+		"https://telegram.me/", "http://telegram.me/",
+		"https://t.me/", "http://t.me/",
+		"telegram.me/s/", "t.me/s/",
+		"telegram.me/", "t.me/",
+	} {
+		if strings.HasPrefix(low, p) {
+			ch = ch[len(p):]
+			low = strings.ToLower(ch)
+			break
+		}
+	}
+	// drop query/fragment
+	if i := strings.IndexAny(ch, "?#"); i >= 0 {
+		ch = ch[:i]
+	}
+	ch = strings.Trim(ch, "/")
+	return strings.TrimSpace(ch)
+}
+
 func SearchPublic(channels []string, keywords []string, limit int) ([]Hit, error) {
 	if limit <= 0 {
 		limit = 30
@@ -23,9 +50,7 @@ func SearchPublic(channels []string, keywords []string, limit int) ([]Hit, error
 	client := &http.Client{Timeout: 15 * time.Second}
 	var hits []Hit
 	for _, ch := range channels {
-		ch = strings.TrimSpace(strings.TrimPrefix(ch, "@"))
-		ch = strings.TrimPrefix(ch, "https://t.me/")
-		ch = strings.TrimPrefix(ch, "t.me/")
+		ch = NormalizeChannel(ch)
 		if ch == "" {
 			continue
 		}
@@ -58,7 +83,6 @@ func SearchPublic(channels []string, keywords []string, limit int) ([]Hit, error
 					}
 				}
 				if !ok {
-					// still accept if keyword empty match fail - skip
 					continue
 				}
 			}

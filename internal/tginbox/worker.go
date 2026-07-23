@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -210,16 +211,16 @@ func (w *Worker) loop(ctx context.Context) {
 				if text == "" {
 					text = u.Message.Caption
 				}
-				chatID = fmt.Sprint(u.Message.Chat["id"])
+				chatID = anyID(u.Message.Chat["id"])
 				if u.Message.From != nil {
-					fromID = fmt.Sprint(u.Message.From["id"])
+					fromID = anyID(u.Message.From["id"])
 				}
 			} else if u.ChannelPost != nil {
 				text = u.ChannelPost.Text
 				if text == "" {
 					text = u.ChannelPost.Caption
 				}
-				chatID = fmt.Sprint(u.ChannelPost.Chat["id"])
+				chatID = anyID(u.ChannelPost.Chat["id"])
 			}
 			if text == "" {
 				continue
@@ -254,14 +255,59 @@ func (w *Worker) loop(ctx context.Context) {
 	}
 }
 
+
+// anyID formats Telegram chat/user ids without scientific notation.
+// json.Unmarshal puts large numbers into float64; fmt.Sprint becomes 8.18e+09.
+func anyID(v any) string {
+	switch x := v.(type) {
+	case nil:
+		return ""
+	case string:
+		s := strings.TrimSpace(x)
+		if f, err := strconv.ParseFloat(s, 64); err == nil {
+			if f == float64(int64(f)) {
+				return strconv.FormatInt(int64(f), 10)
+			}
+		}
+		return s
+	case json.Number:
+		if i, err := x.Int64(); err == nil {
+			return strconv.FormatInt(i, 10)
+		}
+		return strings.TrimSpace(x.String())
+	case float64:
+		return strconv.FormatInt(int64(x), 10)
+	case float32:
+		return strconv.FormatInt(int64(x), 10)
+	case int64:
+		return strconv.FormatInt(x, 10)
+	case int:
+		return strconv.Itoa(x)
+	case int32:
+		return strconv.FormatInt(int64(x), 10)
+	case uint64:
+		return strconv.FormatUint(x, 10)
+	default:
+		s := strings.TrimSpace(fmt.Sprint(x))
+		if f, err := strconv.ParseFloat(s, 64); err == nil {
+			if f == float64(int64(f)) {
+				return strconv.FormatInt(int64(f), 10)
+			}
+		}
+		return s
+	}
+}
+
 func (w *Worker) authorized(chatID, fromID string) bool {
 	allow := strings.TrimSpace(w.UserID)
 	if allow == "" {
 		return false
 	}
+	chatID = anyID(chatID)
+	fromID = anyID(fromID)
 	// support comma-separated ids
 	for _, p := range strings.FieldsFunc(allow, func(r rune) bool { return r == ',' || r == ' ' || r == ';' || r == '\n' }) {
-		p = strings.TrimSpace(p)
+		p = anyID(strings.TrimSpace(p))
 		if p != "" && (p == chatID || p == fromID) {
 			return true
 		}

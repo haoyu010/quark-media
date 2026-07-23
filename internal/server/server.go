@@ -19,6 +19,7 @@ import (
 	"quark-media/internal/emby"
 	"quark-media/internal/pipeline"
 	"quark-media/internal/qas"
+	"quark-media/internal/replace"
 	"quark-media/internal/quark"
 	"quark-media/internal/store"
 	"quark-media/internal/strm"
@@ -116,6 +117,8 @@ func (a *App) routes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/logs/clear", a.handleLogsClear)
 	mux.HandleFunc("/api/test-play", a.handleTestPlay)
 	mux.HandleFunc("/api/pipeline/run", a.handlePipeline)
+	mux.HandleFunc("/api/replace", a.handleReplace)
+	mux.HandleFunc("/api/replace/try", a.handleReplace)
 	mux.HandleFunc("/api/subscriptions", a.handleSubs)
 	mux.HandleFunc("/api/subscriptions/", a.handleSubItem)
 	mux.HandleFunc("/api/subscriptions/refresh-channels", a.handleSubRefresh)
@@ -777,7 +780,7 @@ func (a *App) applyShareToSubscription(idx int, share string, alsoQAS bool) (map
 func channelList(ex qas.Extras, cfg *config.Config) []string {
 	var chs []string
 	if v, ok := ex.TelegramSource["channels"].(string); ok {
-		for _, p := range strings.FieldsFunc(v, func(r rune) bool { return r == ',' || r == '\n' || r == ' ' }) {
+		for _, p := range strings.FieldsFunc(v, func(r rune) bool { return r == ',' || r == '\n' || r == ';' || r == '\r' }) {
 			p = strings.TrimSpace(p)
 			if p != "" {
 				chs = append(chs, p)
@@ -1728,3 +1731,78 @@ func (a *App) handleQuarkDirs(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, map[string]any{"ok": true, "fid": fid, "dirs": dirs})
 }
 
+
+
+func (a *App) handleReplace(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost && r.Method != http.MethodGet {
+		writeJSON(w, 405, map[string]any{"ok": false, "error": "method"})
+		return
+	}
+	body := map[string]any{}
+	if r.Method == http.MethodPost {
+		b, err := readJSON(r)
+		if err == nil {
+			body = b
+		}
+	}
+	// allow query
+	name := firstNonEmpty(asStr(body["taskname"]), asStr(body["name"]), r.URL.Query().Get("name"))
+	share := firstNonEmpty(asStr(body["shareurl"]), asStr(body["share_url"]), r.URL.Query().Get("share_url"))
+	reason := firstNonEmpty(asStr(body["reason"]), "manual")
+	// find task
+	task := map[string]any{}
+	for _, t := range qas.ListTasks(a.Cfg.QASConfig) {
+		if name != "" && asStr(t["name"]) == name {
+			task = t
+			break
+		}
+		if share != "" && (asStr(t["share_url"]) == share) {
+			task = t
+			break
+		}
+	}
+	if asStr(task["share_url"]) == "" && share != "" {
+		task["share_url"] = share
+		task["shareurl"] = share
+		task["name"] = name
+		task["taskname"] = name
+	}
+	if asStr(task["share_url"]) == "" && asStr(task["name"]) == "" {
+		writeJSON(w, 400, map[string]any{"ok": false, "error": "need task name or share_url"})
+		return
+	}
+	// force enable for manual try if global disabled? still respect settings, but allow force
+	ex := qas.LoadExtras(a.Cfg.QASConfig)
+	chs := channelList(ex, a.Cfg)
+	rep := replace.NewFromQAS(a.Cfg.QASConfig, a.Client, chs, func(s string) { a.Log.Add(s) })
+	if asBool(body["force"]) || asStr(body["force"]) == "1" {
+		rep.Settings.Enabled = true
+	}
+	rr := rep.TryReplace(task, reason)
+	if rr.Replaced && rr.NewShareURL != "" {
+		_ = qas.UpdateTaskShare(a.Cfg.QASConfig, firstNonEmpty(asStr(task["name"]), name), firstNonEmpty(asStr(task["share_url"]), share), rr.NewShareURL)
+		a.backupPersistFiles()
+		// optional transfer now
+		if asBool(body["run"]) || asStr(body["run"]) == "1" {
+			task["share_url"] = rr.NewShareURL
+			out := pipeline.RunOne(a.Cfg, a.Client, a.Log, task)
+			writeJSON(w, 200, map[string]any{"ok": true, "replace": rr, "transfer": out})
+			return
+		}
+	}
+	writeJSON(w, 200, map[string]any{"ok": rr.Replaced, "replace": rr})
+}
+
+func asBool(v any) bool {
+	switch t := v.(type) {
+	case bool:
+		return t
+	case string:
+		s := strings.ToLower(strings.TrimSpace(t))
+		return s == "1" || s == "true" || s == "yes" || s == "on"
+	case float64:
+		return t != 0
+	default:
+		return false
+	}
+}

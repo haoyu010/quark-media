@@ -72,3 +72,18 @@ func TestExtractYearSeason(t *testing.T) {
 		t.Fatal(ExtractSeason("Season 2 更新"))
 	}
 }
+
+
+func TestAnyID(t *testing.T) {
+	if anyID(float64(8189522184)) != "8189522184" {
+		t.Fatalf("float id=%q", anyID(float64(8189522184)))
+	}
+	w := &Worker{UserID: "8189522184"}
+	if !w.authorized(anyID(float64(8189522184)), anyID(float64(8189522184))) {
+		t.Fatal("auth should pass with float ids")
+	}
+	// scientific string form
+	if !w.authorized("8.189522184e+09", "8.189522184e+09") {
+		t.Fatal("auth should pass with sci-notation string ids")
+	}
+}

@@ -9,6 +9,7 @@ import (
 	"quark-media/internal/emby"
 	"quark-media/internal/qas"
 	"quark-media/internal/quark"
+	"quark-media/internal/replace"
 	"quark-media/internal/store"
 	"quark-media/internal/strm"
 )
@@ -87,6 +88,18 @@ func CollectTasks(cfg *config.Config) []map[string]any {
 	return uniq
 }
 
+func asBool(v any) bool {
+	switch t := v.(type) {
+	case bool:
+		return t
+	case string:
+		s := strings.ToLower(strings.TrimSpace(t))
+		return s == "1" || s == "true" || s == "yes"
+	default:
+		return false
+	}
+}
+
 func asStr(v any) string {
 	if v == nil {
 		return ""
@@ -117,13 +130,69 @@ func RunOne(cfg *config.Config, client *quark.Client, log *store.Logger, t map[s
 	}
 	res, err := client.SaveShare(share, qpath, asStr(t["passcode"]))
 	if err != nil {
-		item["ok"] = false
-		item["error"] = err.Error()
-		item["save_error"] = err.Error()
-		if log != nil {
-			log.Add("save_error " + err.Error())
+		// QAS: retry_save_after_auto_replace on invalid share
+		replaced := false
+		if replace.IsInvalidShareErr(err) && !asBool(t["_auto_replace_retrying"]) {
+			if log != nil {
+				log.Add("share invalid, try auto replace: " + err.Error())
+			}
+			ex := qas.LoadExtras(cfg.QASConfig)
+			var chs []string
+			if v, ok := ex.TelegramSource["channels"].(string); ok {
+				for _, p := range strings.FieldsFunc(v, func(r rune) bool { return r == ',' || r == '\n' || r == ';' || r == '\r' }) {
+					p = strings.TrimSpace(p)
+					if p != "" {
+						chs = append(chs, p)
+					}
+				}
+			}
+			if v, ok := ex.TelegramSource["channels"].([]any); ok {
+				for _, x := range v {
+					if s := asStr(x); s != "" {
+						chs = append(chs, s)
+					}
+				}
+			}
+			rep := replace.NewFromQAS(cfg.QASConfig, client, chs, func(s string) {
+				if log != nil {
+					log.Add(s)
+				}
+			})
+			// enable if settings say so; also allow env-like default from task_settings string "enabled"
+			rr := rep.TryReplace(t, err.Error())
+			item["auto_replace"] = rr
+			if rr.Replaced && rr.NewShareURL != "" {
+				_ = qas.UpdateTaskShare(cfg.QASConfig, name, share, rr.NewShareURL)
+				t["share_url"] = rr.NewShareURL
+				t["shareurl"] = rr.NewShareURL
+				t["_auto_replace_retrying"] = true
+				share = rr.NewShareURL
+				if log != nil {
+					log.Add("auto replace ok: " + rr.Message)
+				}
+				res2, err2 := client.SaveShare(share, qpath, asStr(t["passcode"]))
+				if err2 == nil {
+					res = res2
+					err = nil
+					replaced = true
+					item["share_url"] = share
+				} else {
+					err = err2
+				}
+			} else if log != nil {
+				log.Add("auto replace skip: " + rr.Message)
+			}
 		}
-		return item
+		if err != nil {
+			item["ok"] = false
+			item["error"] = err.Error()
+			item["save_error"] = err.Error()
+			if log != nil {
+				log.Add("save_error " + err.Error())
+			}
+			return item
+		}
+		_ = replaced
 	}
 	item["save"] = res
 	videos, err := client.WalkVideos(qpath, cfg.VideoExts, 12)
