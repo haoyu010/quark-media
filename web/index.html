@@ -418,8 +418,7 @@
               <button type="button" data-sec="strm">STRM 库</button>
               <button type="button" data-sec="emby">Emby</button>
               <div class="sn-label">系统</div>
-              <button type="button" data-sec="file">配置文件</button>
-            </aside>
+</aside>
 
             <form id="settings-form" class="settings-main" autocomplete="off">
               <section class="settings-sec show" id="sec-account">
@@ -472,14 +471,7 @@
                     </div>
                     <textarea id="set-murl" class="field mono" rows="3" placeholder="含 kps/sign/vcode/ut 的 drive-m URL；留空保留原值"></textarea>
                   </div>
-                  <div class="fg">
-                    <label>m_url 文件路径</label>
-                    <input id="set-murl-file" class="field" placeholder="C:/path/quark_mobile_request_url.txt" />
-                  </div>
-                  <div class="fg">
-                    <label>OpenList DB</label>
-                    <input id="set-openlist-db" class="field" placeholder="C:/path/openlist_tmp.db" />
-                  </div>
+                  
                 </div>
               </section>
 
@@ -849,22 +841,7 @@
                 </div>
               </section>
 
-              <section class="settings-sec" id="sec-file">
-                <div class="sec-title">
-                  <div>
-                    <h3>配置文件</h3>
-                    <p>当前写入目标与脱敏预览。</p>
-                  </div>
-                </div>
-                <div class="form-grid">
-                  <div class="fg full">
-                    <label>config.yaml 路径</label>
-                    <input id="set-config-path" class="field" readonly />
-                  </div>
-                </div>
-                <div class="help" style="margin:10px 0 12px">端口 / Host 变更需重启服务；Cookie、m_url、Emby、路径等可热更新。</div>
-                <pre class="code" id="settings-preview">{}</pre>
-              </section>
+              
             </form>
           </div>
         </section>

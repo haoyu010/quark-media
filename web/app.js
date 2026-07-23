@@ -434,10 +434,19 @@ function fillSettingsForm(d) {
   }).catch(()=>{});
   api("/api/category").then(c => {
     const box = el("category-preview");
-    if (box) box.textContent = JSON.stringify(c, null, 2);
-  }).catch(()=>{});
+    const hint = el("category-path-hint");
+    if (hint) hint.textContent = c.path ? ("路径 " + c.path) : "Docker 固定路径";
+    if (el("set-category-file") && c.path) el("set-category-file").value = c.path;
+    if (box) {
+      const view = c.raw ? c.raw : JSON.stringify(c.rules || c, null, 2);
+      box.textContent = view || "{}";
+    }
+  }).catch((e)=>{
+    const box = el("category-preview");
+    if (box) box.textContent = "加载失败: " + (e.message || e);
+  });
 
-  $("#settings-preview").textContent = JSON.stringify(sanitizePreview(d), null, 2);
+  const sp = document.getElementById("settings-preview"); if (sp) sp.textContent = JSON.stringify(sanitizePreview(d), null, 2);
 }
 async function loadSettings() {
   const data = await api("/api/settings");
@@ -451,8 +460,7 @@ function collectSettingsPatch() {
   const patch = {
     cookie: val("set-cookie"),
     m_url: val("set-murl"),
-    m_url_file: val("set-murl-file"),
-    openlist_db: val("set-openlist-db"),
+
     use_qas_transfer: chk("set-use-qas"),
     import_qas_tasks: chk("set-import-qas"),
     qas_write_back: chk("set-qas-writeback"),
