@@ -911,31 +911,8 @@
 
   <div class="toast" id="toast"></div>
   <div class="scrim" id="scrim" hidden></div>
-  <script src="/app.js"></script>
-<button class="icon-btn" id="qr-modal-close" type="button" aria-label="关闭">×</button>
-      </div>
-      <div class="modal-body qr-modal-body">
-        <div class="qr-img-wrap" id="qr-img-wrap">
-          <img id="qr-image" alt="夸克扫码" width="220" height="220" hidden />
-          <div class="qr-placeholder" id="qr-placeholder">正在生成二维码…</div>
-        </div>
-        <div class="qr-meta">
-          <div class="row"><span>状态</span><b id="qr-status">—</b></div>
-          <div class="help" id="qr-message">等待生成…</div>
-          <label class="chk" style="margin-top:12px;display:flex;gap:8px;align-items:center">
-            <input type="checkbox" id="qr-append-account" />
-            <span>追加为多账号（不覆盖当前活动号）</span>
-          </label>
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn soft" type="button" id="btn-qr-refresh">刷新二维码</button>
-        <button class="btn soft" type="button" id="btn-qr-cancel">取消</button>
-        <button class="btn primary" type="button" id="btn-qr-start">生成二维码</button>
-      </div>
-    </div>
-  </div>
-
+  
+<script src="/app.js"></script>
 
   <div class="modal" id="qr-modal" hidden aria-hidden="true">
     <div class="modal-card qr-modal-card" role="dialog" aria-modal="true" aria-labelledby="qr-modal-title">
@@ -944,7 +921,7 @@
           <h3 id="qr-modal-title">夸克扫码登录</h3>
           <p id="qr-modal-sub">请使用夸克 App 扫码并确认</p>
         </div>
-        <button class="icon-btn" id="qr-modal-close" type="button" aria-label="关闭">×</button>
+        <button class="icon-btn" type="button" id="qr-modal-close" aria-label="关闭">×</button>
       </div>
       <div class="modal-body qr-modal-body">
         <div class="qr-img-wrap" id="qr-img-wrap">
@@ -967,7 +944,6 @@
       </div>
     </div>
   </div>
-
 
   <div class="modal" id="folder-modal" hidden aria-hidden="true">
     <div class="modal-card folder-modal-card" role="dialog" aria-modal="true">

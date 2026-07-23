@@ -789,7 +789,7 @@ async function openSubSearch(id) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ share_url: share, also_qas_task: true }),
         });
-        toast("已写入订阅并同步 QAS 任务", "ok");
+        toast("已应用分享链并整理转存", "ok");
         document.getElementById("sub-search-modal").hidden = true;
         await loadSubscriptions();
       };
@@ -1458,7 +1458,7 @@ function openQrModal() {
   const modal = document.getElementById("qr-modal");
   if (!modal) return;
   modal.hidden = false;
-  modal.style.display = "flex";
+  modal.style.display = "grid";
   modal.setAttribute("aria-hidden", "false");
   document.body.classList.add("modal-open");
 }
@@ -1636,7 +1636,7 @@ function openFolderPicker(inputId) {
   const modal = document.getElementById("folder-modal");
   if (!modal) return toast("目录选择器未加载", "err");
   modal.hidden = false;
-  modal.style.display = "flex";
+  modal.style.display = "grid";
   loadFolderList().catch((e) => toast(e.message || String(e), "err"));
 }
 

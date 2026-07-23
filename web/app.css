@@ -1886,14 +1886,18 @@ html[data-theme="light"] .btn.icon-only .i-moon { display: none; }
 }
 
 
-/* force QR modal close */
-#qr-modal[hidden],
-#qr-modal[aria-hidden="true"] {
+/* modal open/close (QR + folder) */
+.modal[hidden],
+.modal[aria-hidden="true"] {
   display: none !important;
   pointer-events: none !important;
 }
-#qr-modal:not([hidden]) {
-  display: flex !important;
+.modal:not([hidden]) {
+  display: grid !important;
+  place-items: center;
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
   pointer-events: auto;
 }
 body.modal-open { overflow: hidden; }

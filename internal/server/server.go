@@ -178,6 +178,15 @@ func readJSON(r *http.Request) (map[string]any, error) {
 	return m, nil
 }
 
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if strings.TrimSpace(v) != "" {
+			return strings.TrimSpace(v)
+		}
+	}
+	return ""
+}
+
 func asStr(v any) string {
 	if v == nil {
 		return ""
@@ -284,7 +293,7 @@ func (a *App) handleStatus(w http.ResponseWriter, r *http.Request) {
 		"tg_inbox": map[string]any{
 			"enabled": tgEnabled && hasToken, "running": a.tgRunning,
 			"has_token": hasToken, "has_user": asStr(ex.PushConfig["TG_USER_ID"]) != "",
-			"inbox_root": asStr(ex.TaskSettings["inbox_root"]),
+			"inbox_root": firstNonEmpty(asStr(ex.TaskSettings["telegram_inbox_media_root"]), asStr(ex.TaskSettings["inbox_root"])),
 		},
 		"mtproto": map[string]any{"enabled": a.Cfg.Mtproto.Enabled, "running": a.mtpRunning},
 	})
@@ -596,6 +605,117 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, map[string]any{"ok": true, "settings": view})
 }
 
+
+func (a *App) resolveInboxRoot() string {
+	ex := qas.LoadExtras(a.Cfg.QASConfig)
+	for _, k := range []string{"telegram_inbox_media_root", "inbox_root", "media_root"} {
+		if v := asStr(ex.TaskSettings[k]); v != "" {
+			return strings.Trim(strings.ReplaceAll(v, "\\", "/"), "/")
+		}
+	}
+	return ""
+}
+
+func joinQuarkPath(parts ...string) string {
+	var out []string
+	for _, p := range parts {
+		p = strings.Trim(strings.ReplaceAll(p, "\\", "/"), "/")
+		if p == "" {
+			continue
+		}
+		out = append(out, p)
+	}
+	return strings.Join(out, "/")
+}
+
+func defaultSubRelPath(s config.Subscription) string {
+	name := strings.TrimSpace(s.Name)
+	if name == "" {
+		name = "未命名"
+	}
+	// strip illegal path chars for cloud path
+	repl := strings.NewReplacer("/", " ", "\\", " ", ":", " ", "*", " ", "?", " ", "\"", " ", "<", " ", ">", " ", "|", " ")
+	name = strings.TrimSpace(repl.Replace(name))
+	ct := strings.ToLower(strings.TrimSpace(s.ContentType))
+	switch ct {
+	case "movie", "movies", "film":
+		return joinQuarkPath("电影", name)
+	case "tv", "show", "series", "anime":
+		return joinQuarkPath("剧集", name)
+	default:
+		if ct == "" {
+			ct = "剧集"
+		}
+		return joinQuarkPath(ct, name)
+	}
+}
+
+// buildSubSavePath puts subscription under inbox root (same as TG auto-receive).
+func (a *App) buildSubSavePath(s config.Subscription) string {
+	root := a.resolveInboxRoot()
+	rel := strings.Trim(strings.ReplaceAll(s.SavePath, "\\", "/"), "/")
+	if rel == "" {
+		rel = defaultSubRelPath(s)
+	}
+	// if already under root, keep
+	if root != "" {
+		if rel == root || strings.HasPrefix(rel, root+"/") {
+			return rel
+		}
+		// if rel is bare type/name, still prefix root
+		return joinQuarkPath(root, rel)
+	}
+	return rel
+}
+
+// applyShareToSubscription writes share, organizes save path under inbox root, transfers, syncs QAS task.
+func (a *App) applyShareToSubscription(idx int, share string, alsoQAS bool) (map[string]any, error) {
+	if idx < 0 || idx >= len(a.Cfg.Subscriptions) {
+		return nil, fmt.Errorf("subscription not found")
+	}
+	share = strings.TrimSpace(share)
+	if share == "" {
+		return nil, fmt.Errorf("empty share_url")
+	}
+	s := a.Cfg.Subscriptions[idx]
+	s.ShareURL = share
+	savePath := a.buildSubSavePath(s)
+	s.SavePath = savePath
+	a.Cfg.Subscriptions[idx] = s
+	if err := a.Cfg.Save(); err != nil {
+		return nil, err
+	}
+
+	out := map[string]any{
+		"ok": true,
+		"share_url": share,
+		"save_path": savePath,
+		"inbox_root": a.resolveInboxRoot(),
+	}
+	if !a.Client.CookieOK() {
+		out["save_error"] = "quark cookie not ready"
+		out["saved"] = false
+		return out, nil
+	}
+	if _, err := a.Client.SaveShare(share, savePath, ""); err != nil {
+		out["save_error"] = err.Error()
+		out["saved"] = false
+		a.Log.Add(fmt.Sprintf("sub apply save failed %s -> %s: %v", s.Name, savePath, err))
+	} else {
+		out["saved"] = true
+		a.Log.Add(fmt.Sprintf("sub apply saved %s -> %s", s.Name, savePath))
+	}
+	if alsoQAS || a.Cfg.UseQASTransfer {
+		if err := qas.UpsertTask(a.Cfg.QASConfig, s.Name, savePath, share, ""); err != nil {
+			out["qas_error"] = err.Error()
+		} else {
+			out["qas_synced"] = true
+		}
+	}
+	return out, nil
+}
+
+
 func channelList(ex qas.Extras, cfg *config.Config) []string {
 	var chs []string
 	if v, ok := ex.TelegramSource["channels"].(string); ok {
@@ -688,16 +808,16 @@ func (a *App) handleSubItem(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, 404, map[string]any{"ok": false})
 			return
 		}
-		a.Cfg.Subscriptions[idx].ShareURL = share
-		_ = a.Cfg.Save()
-		if a.Cfg.Subscriptions[idx].SavePath != "" && share != "" {
-			_, err := a.Client.SaveShare(share, a.Cfg.Subscriptions[idx].SavePath, "")
-			if err != nil {
-				writeJSON(w, 200, map[string]any{"ok": true, "share_url": share, "save_error": err.Error()})
-				return
-			}
+		alsoQAS := true
+		if v, ok := body["also_qas_task"].(bool); ok {
+			alsoQAS = v
 		}
-		writeJSON(w, 200, map[string]any{"ok": true, "share_url": share})
+		out, err := a.applyShareToSubscription(idx, share, alsoQAS)
+		if err != nil {
+			writeJSON(w, 400, map[string]any{"ok": false, "error": err.Error()})
+			return
+		}
+		writeJSON(w, 200, out)
 		return
 	}
 	if action == "delete" || r.Method == http.MethodDelete {
@@ -729,6 +849,7 @@ func (a *App) handleSubRefresh(w http.ResponseWriter, r *http.Request) {
 	ex := qas.LoadExtras(a.Cfg.QASConfig)
 	chs := channelList(ex, a.Cfg)
 	updated := 0
+	saved := 0
 	for i, s := range a.Cfg.Subscriptions {
 		if s.ShareURL != "" && a.Cfg.SubSearch.OnlyMissingShare {
 			continue
@@ -741,11 +862,17 @@ func (a *App) handleSubRefresh(w http.ResponseWriter, r *http.Request) {
 		if len(hits) == 0 {
 			continue
 		}
-		a.Cfg.Subscriptions[i].ShareURL = hits[0].URL
+		out, err := a.applyShareToSubscription(i, hits[0].URL, true)
+		if err != nil {
+			a.Log.Add("sub refresh apply: " + err.Error())
+			continue
+		}
 		updated++
+		if out["saved"] == true {
+			saved++
+		}
 	}
-	_ = a.Cfg.Save()
-	writeJSON(w, 200, map[string]any{"ok": true, "updated": updated})
+	writeJSON(w, 200, map[string]any{"ok": true, "updated": updated, "saved": saved, "inbox_root": a.resolveInboxRoot()})
 }
 
 func (a *App) handleCategory(w http.ResponseWriter, r *http.Request) {
@@ -863,7 +990,7 @@ func (a *App) handleTgInbox(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, map[string]any{
 		"ok": true, "enabled": enabled && hasToken, "running": a.tgRunning,
 		"has_token": hasToken, "has_user": hasUser,
-		"inbox_root": asStr(ex.TaskSettings["inbox_root"]), "missing": missing,
+		"inbox_root": firstNonEmpty(asStr(ex.TaskSettings["telegram_inbox_media_root"]), asStr(ex.TaskSettings["inbox_root"])), "missing": missing,
 		"note": "Go core ready; bot inbox worker next",
 	})
 }
@@ -928,33 +1055,49 @@ func (a *App) handleTMDBSubscribe(w http.ResponseWriter, r *http.Request) {
 	if asStr(body["tmdb_id"]) == "" {
 		body["tmdb_id"] = asStr(body["id"])
 	}
-	if asStr(body["save_path"]) == "" {
-		ct := asStr(body["content_type"])
-		if ct == "" {
-			ct = "tv"
-		}
-		body["save_path"] = ct + "/" + asStr(body["name"])
+	// precompute organized save path under inbox root (same as TG收链)
+	tmp := config.Subscription{
+		Name: asStr(body["name"]),
+		ContentType: asStr(body["content_type"]),
+		SavePath: asStr(body["save_path"]),
 	}
+	body["save_path"] = a.buildSubSavePath(tmp)
 	v, err := subs.Create(a.Cfg, body)
 	if err != nil {
 		writeJSON(w, 400, map[string]any{"ok": false, "error": err.Error()})
 		return
 	}
+	channelSearch := map[string]any{}
 	if a.Cfg.SubSearch.Enabled {
 		ex := qas.LoadExtras(a.Cfg.QASConfig)
 		chs := channelList(ex, a.Cfg)
 		kws := []string{asStr(body["name"])}
-		hits, _ := channel.SearchPublic(chs, kws, 5)
-		if len(hits) > 0 && a.Cfg.SubSearch.ApplyBest {
-			i := len(a.Cfg.Subscriptions) - 1
-			if i >= 0 {
-				a.Cfg.Subscriptions[i].ShareURL = hits[0].URL
-				_ = a.Cfg.Save()
-				v.ShareURL = hits[0].URL
+		hits, errSearch := channel.SearchPublic(chs, kws, 5)
+		if errSearch != nil {
+			channelSearch["error"] = errSearch.Error()
+		} else {
+			channelSearch["count"] = len(hits)
+			if len(hits) > 0 && a.Cfg.SubSearch.ApplyBest {
+				i := len(a.Cfg.Subscriptions) - 1
+				if i >= 0 {
+					out, errApply := a.applyShareToSubscription(i, hits[0].URL, true)
+					if errApply != nil {
+						channelSearch["error"] = errApply.Error()
+					} else {
+						channelSearch["applied"] = true
+						channelSearch["share_url"] = hits[0].URL
+						channelSearch["save_path"] = out["save_path"]
+						channelSearch["saved"] = out["saved"]
+						v.ShareURL = hits[0].URL
+						v.SavePath = asStr(out["save_path"])
+					}
+				}
+			} else if len(hits) > 0 {
+				channelSearch["applied"] = false
 			}
 		}
 	}
-	writeJSON(w, 200, map[string]any{"ok": true, "item": v, "subscription": v})
+	writeJSON(w, 200, map[string]any{"ok": true, "item": v, "subscription": v, "channel_search": channelSearch, "inbox_root": a.resolveInboxRoot()})
 }
 
 func (a *App) handleChannelStatus(w http.ResponseWriter, r *http.Request) {

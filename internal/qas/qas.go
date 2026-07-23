@@ -213,3 +213,81 @@ func PublicExtras(ex Extras) map[string]any {
 		"cookies_count":    len(ex.Cookies),
 	}
 }
+
+
+// UpsertTask creates or updates a QAS tasklist item by name.
+func UpsertTask(path, name, savePath, shareURL, passcode string) error {
+	raw := map[string]any{}
+	if b, err := os.ReadFile(path); err == nil {
+		_ = json.Unmarshal(b, &raw)
+	}
+	name = strings.TrimSpace(name)
+	if name == "" {
+		name = strings.TrimSpace(savePath)
+	}
+	if name == "" {
+		name = "sub-task"
+	}
+	item := map[string]any{
+		"taskname":  name,
+		"shareurl":  strings.TrimSpace(shareURL),
+		"savepath":  strings.TrimSpace(savePath),
+		"pattern":   "",
+		"replace":   "",
+		"enddate":   "",
+		"emby_id":   "",
+		"ignore_extension": false,
+		"runweek":   []int{1, 2, 3, 4, 5, 6, 7},
+	}
+	if strings.TrimSpace(passcode) != "" {
+		item["shareurl"] = strings.TrimSpace(shareURL)
+	}
+
+	list := []any{}
+	switch v := raw["tasklist"].(type) {
+	case []any:
+		list = v
+	case map[string]any:
+		for n, it := range v {
+			m, _ := it.(map[string]any)
+			if m == nil {
+				m = map[string]any{}
+			}
+			if asStr(m["taskname"]) == "" && asStr(m["name"]) == "" {
+				m["taskname"] = n
+			}
+			list = append(list, m)
+		}
+	}
+	found := false
+	for i, it := range list {
+		m, _ := it.(map[string]any)
+		if m == nil {
+			continue
+		}
+		n := asStr(m["taskname"])
+		if n == "" {
+			n = asStr(m["name"])
+		}
+		if n == name {
+			m["taskname"] = name
+			m["shareurl"] = strings.TrimSpace(shareURL)
+			m["savepath"] = strings.TrimSpace(savePath)
+			list[i] = m
+			found = true
+			break
+		}
+	}
+	if !found {
+		list = append(list, item)
+	}
+	raw["tasklist"] = list
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	b, err := json.MarshalIndent(raw, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, b, 0o644)
+}
