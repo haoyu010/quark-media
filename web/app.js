@@ -378,8 +378,10 @@ function fillSettingsForm(d) {
   // secrets never echo; only hints
   setVal("set-cookie", "");
   setVal("set-murl", "");
-  setTxt("cookie-hint", d.cookie_set ? `已配置 ${d.cookie_masked || ""}` : "未配置");
-  setTxt("murl-hint", d.m_url_set ? `已配置 ${d.m_url_masked || ""}` : "未配置");
+  setTxt("cookie-hint", d.cookie_set ? `✓ 已配置 ${d.cookie_masked || ""}` : "未配置");
+  if (el("cookie-hint")) { el("cookie-hint").style.color = d.cookie_set ? "var(--ok,#10b981)" : ""; el("cookie-hint").style.fontWeight = d.cookie_set ? "700" : ""; }
+  setTxt("murl-hint", d.m_url_set ? `✓ 已配置 ${d.m_url_masked || ""}` : "未配置");
+  if (el("murl-hint")) { el("murl-hint").style.color = d.m_url_set ? "var(--ok,#10b981)" : ""; el("murl-hint").style.fontWeight = d.m_url_set ? "700" : ""; }
   setVal("set-murl-file", d.m_url_file || "");
   setVal("set-openlist-db", d.openlist_db || "");
   setChk("set-use-qas", d.use_qas_transfer);
@@ -396,7 +398,8 @@ function fillSettingsForm(d) {
   setChk("set-emby-enabled", d.emby?.enabled);
   setVal("set-emby-url", d.emby?.base_url || "");
   setVal("set-emby-key", "");
-  setTxt("emby-key-hint", d.emby?.api_key_set ? `已配置 ${d.emby.api_key_masked || ""}` : "未配置");
+  setTxt("emby-key-hint", d.emby?.api_key_set ? `✓ 已配置 ${d.emby.api_key_masked || ""}` : "未配置");
+  if (el("emby-key-hint")) { el("emby-key-hint").style.color = d.emby?.api_key_set ? "var(--ok,#10b981)" : ""; el("emby-key-hint").style.fontWeight = d.emby?.api_key_set ? "700" : ""; }
   setVal("set-emby-path", d.emby?.path || "");
   setVal("set-config-path", d.config_path || "");
 
@@ -405,19 +408,37 @@ function fillSettingsForm(d) {
   const src = x.telegram_source || {};
   const ts = x.task_settings || {};
 
-  setChk("set-tg-enabled", pc.TG_ENABLED);
-  setChk("set-tg-inbox", pc.TG_INBOX_AUTO_CREATE);
-  setChk("set-tg-sign", pc.QUARK_SIGN_NOTIFY);
+  setChk("set-tg-enabled", pc.TG_ENABLED === true || pc.TG_ENABLED === "true" || pc.TG_ENABLED === 1);
+  setChk("set-tg-inbox", pc.TG_INBOX_AUTO_CREATE === true || pc.TG_INBOX_AUTO_CREATE === "true" || pc.TG_INBOX_AUTO_CREATE === 1);
+  setChk("set-tg-sign", pc.QUARK_SIGN_NOTIFY === true || pc.QUARK_SIGN_NOTIFY === "true");
+  // token 不回显明文，但必须明确「已配置」
   setVal("set-tg-token", "");
-  const tokenSet = !!(pc.TG_BOT_TOKEN_SET || pc.TG_BOT_TOKEN_set || pc.TG_BOT_TOKEN);
-  setTxt("tg-token-hint", tokenSet ? `已配置 ${pc.TG_BOT_TOKEN_masked || "••••"}` : "未配置");
-  setVal("set-tg-userid", pc.TG_USER_ID || "");
+  const tokenSet = !!(pc.TG_BOT_TOKEN_SET || pc.TG_BOT_TOKEN_set || (pc.TG_BOT_TOKEN && String(pc.TG_BOT_TOKEN).length > 8));
+  const tokenHint = el("tg-token-hint");
+  if (tokenHint) {
+    tokenHint.textContent = tokenSet ? `✓ 已配置 ${pc.TG_BOT_TOKEN_masked || "••••••••"}` : "未配置";
+    tokenHint.style.color = tokenSet ? "var(--ok, #10b981)" : "";
+    tokenHint.style.fontWeight = tokenSet ? "700" : "";
+  }
+  if (el("set-tg-token")) {
+    el("set-tg-token").placeholder = tokenSet ? "已保存（留空不修改）" : "粘贴 Bot Token";
+  }
+  // User ID / 路径必须直接显示出来，不能空着像没配
+  const uid = pc.TG_USER_ID != null && pc.TG_USER_ID !== "" ? String(pc.TG_USER_ID) : "";
+  setVal("set-tg-userid", uid);
   setVal("set-push-notify-type", x.push_notify_type || "full");
   setVal("set-tg-api-host", pc.TG_API_HOST || "");
   setVal("set-tg-proxy-host", pc.TG_PROXY_HOST || "");
-  setVal("set-tg-proxy-port", pc.TG_PROXY_PORT || "");
+  setVal("set-tg-proxy-port", pc.TG_PROXY_PORT != null ? String(pc.TG_PROXY_PORT) : "");
   setVal("set-tg-proxy-auth", pc.TG_PROXY_AUTH || "");
-  setVal("set-tg-inbox-root", ts.telegram_inbox_media_root || ts.inbox_root || "");
+  const inboxRoot = ts.telegram_inbox_media_root || ts.inbox_root || "";
+  setVal("set-tg-inbox-root", inboxRoot);
+  const inboxHint = el("inbox-root-hint");
+  if (inboxHint) {
+    inboxHint.textContent = inboxRoot ? `✓ 已选 /${inboxRoot}` : "转存落盘位置";
+    inboxHint.style.color = inboxRoot ? "var(--ok, #10b981)" : "";
+    inboxHint.style.fontWeight = inboxRoot ? "700" : "";
+  }
 
   setChk("set-src-enabled", src.enabled !== false);
   setChk("set-src-replace", src.auto_replace !== false);
@@ -430,7 +451,9 @@ function fillSettingsForm(d) {
 
   setVal("set-tmdb-key", "");
   const tmdbSet = !!(d.tmdb_set || d.tmdb_api_key_set || x.tmdb_set || x.tmdb_api_key_set);
-  setTxt("tmdb-key-hint", tmdbSet ? `已配置 ${d.tmdb_api_key_masked || x.tmdb_api_key_masked || "••••"}` : "未配置");
+  setTxt("tmdb-key-hint", tmdbSet ? `✓ 已配置 ${d.tmdb_api_key_masked || x.tmdb_api_key_masked || "••••"}` : "未配置");
+  if (el("tmdb-key-hint")) { el("tmdb-key-hint").style.color = tmdbSet ? "var(--ok,#10b981)" : ""; el("tmdb-key-hint").style.fontWeight = tmdbSet ? "700" : ""; }
+  if (el("set-tmdb-key")) el("set-tmdb-key").placeholder = tmdbSet ? "已保存（留空不修改）" : "TMDB API Key";
 
   // mtproto block if present
   const mp = d.mtproto || {};
@@ -1646,14 +1669,19 @@ async function loadCategoryPreview() {
 /* ========== Quark folder picker ========== */
 let _folderTargetInput = null;
 let _folderStack = [{ fid: "0", name: "根目录", path: "" }];
+let _folderSelected = null;
 
 function openFolderPicker(inputId) {
   _folderTargetInput = document.getElementById(inputId);
   _folderStack = [{ fid: "0", name: "根目录", path: "" }];
+  _folderSelected = null;
   const modal = document.getElementById("folder-modal");
   if (!modal) return toast("目录选择器未加载", "err");
   modal.hidden = false;
-  modal.style.display = "grid";
+  modal.removeAttribute("hidden");
+  modal.setAttribute("aria-hidden", "false");
+  modal.style.cssText = "display:grid!important;place-items:center!important;position:fixed!important;inset:0!important;z-index:3000!important;background:rgba(7,11,20,.55)!important;padding:18px!important;";
+  document.body.classList.add("modal-open");
   loadFolderList().catch((e) => toast(e.message || String(e), "err"));
 }
 
@@ -1661,13 +1689,21 @@ function closeFolderPicker() {
   const modal = document.getElementById("folder-modal");
   if (modal) {
     modal.hidden = true;
+    modal.setAttribute("hidden", "");
+    modal.setAttribute("aria-hidden", "true");
     modal.style.display = "none";
   }
+  document.body.classList.remove("modal-open");
   _folderTargetInput = null;
+  _folderSelected = null;
 }
 
 function folderCurrent() {
   return _folderStack[_folderStack.length - 1] || { fid: "0", name: "根目录", path: "" };
+}
+
+function folderEffective() {
+  return _folderSelected || folderCurrent();
 }
 
 function renderFolderCrumb() {
@@ -1678,54 +1714,104 @@ function renderFolderCrumb() {
     return `<button type="button" class="text-btn" data-folder-idx="${i}">${label}</button>${i < _folderStack.length - 1 ? "<span>/</span>" : ""}`;
   }).join("");
   box.querySelectorAll("[data-folder-idx]").forEach((btn) => {
-    btn.onclick = () => {
+    btn.onclick = (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
       const idx = Number(btn.getAttribute("data-folder-idx"));
       _folderStack = _folderStack.slice(0, idx + 1);
+      _folderSelected = null;
       loadFolderList().catch((e) => toast(e.message || String(e), "err"));
     };
   });
+  updateFolderPathLabel();
+}
+
+function updateFolderPathLabel() {
   const pathEl = document.getElementById("folder-current-path");
-  if (pathEl) pathEl.textContent = "/" + (folderCurrent().path || "");
+  if (!pathEl) return;
+  const cur = folderEffective();
+  pathEl.textContent = "/" + (cur.path || "");
+  const sub = document.getElementById("folder-modal-sub");
+  if (sub) {
+    sub.textContent = cur.path
+      ? ("已选：/" + cur.path + "（可进入下钻，或点「使用此目录」）")
+      : "单击选中目录，点「进入」下钻，最后点「使用此目录」";
+  }
 }
 
 async function loadFolderList() {
   const cur = folderCurrent();
   renderFolderCrumb();
   const list = document.getElementById("folder-list");
-  if (list) list.innerHTML = `<div class="empty">加载中…</div>`;
-  const data = await api(`/api/quark/dirs?fid=${encodeURIComponent(cur.fid || "0")}`);
+  if (list) list.innerHTML = '<div class="empty">加载中…</div>';
+  const data = await api("/api/quark/dirs?fid=" + encodeURIComponent(cur.fid || "0"));
   if (!data.ok) throw new Error(data.error || "列目录失败（请先扫码登录夸克）");
   const dirs = data.dirs || [];
   if (!list) return;
   if (!dirs.length) {
-    list.innerHTML = emptyBox("此目录下没有子文件夹", "可直接点「使用此目录」");
+    list.innerHTML = '<div class="empty"><b>此目录下没有子文件夹</b><div class="meta">可直接点「使用此目录」</div></div>';
+    _folderSelected = Object.assign({}, cur);
+    updateFolderPathLabel();
     return;
   }
-  list.innerHTML = dirs.map((d) => `
-    <button type="button" class="folder-item" data-fid="${esc(d.fid)}" data-name="${esc(d.name)}">
-      <span class="name">📁 ${esc(d.name)}</span>
-      <span class="meta">进入</span>
-    </button>`).join("");
-  list.querySelectorAll(".folder-item").forEach((btn) => {
-    btn.onclick = () => {
-      const fid = btn.getAttribute("data-fid");
-      const name = btn.getAttribute("data-name") || "";
-      const parent = folderCurrent().path || "";
-      const path = parent ? `${parent}/${name}` : name;
-      _folderStack.push({ fid, name, path });
-      loadFolderList().catch((e) => toast(e.message || String(e), "err"));
+  list.innerHTML = dirs.map((d) => {
+    const parent = cur.path || "";
+    const path = parent ? (parent + "/" + d.name) : d.name;
+    const selected = _folderSelected && _folderSelected.fid === d.fid ? " is-selected" : "";
+    return '<div class="folder-item' + selected + '" data-fid="' + esc(d.fid) + '" data-name="' + esc(d.name) + '" data-path="' + esc(path) + '" role="button" tabindex="0">' +
+      '<span class="name">📁 ' + esc(d.name) + '</span>' +
+      '<span class="row-actions">' +
+      '<span class="pick-hint">' + (selected ? "已选" : "单击选择") + '</span>' +
+      '<button type="button" class="btn soft folder-enter" data-fid="' + esc(d.fid) + '" data-name="' + esc(d.name) + '" data-path="' + esc(path) + '">进入</button>' +
+      '</span></div>';
+  }).join("");
+
+  list.querySelectorAll(".folder-item").forEach((row) => {
+    row.onclick = (ev) => {
+      if (ev.target.closest(".folder-enter")) return;
+      ev.preventDefault();
+      list.querySelectorAll(".folder-item").forEach((x) => x.classList.remove("is-selected"));
+      row.classList.add("is-selected");
+      list.querySelectorAll(".folder-item .pick-hint").forEach((h) => { h.textContent = "单击选择"; });
+      const hint = row.querySelector(".pick-hint");
+      if (hint) hint.textContent = "已选";
+      _folderSelected = {
+        fid: row.getAttribute("data-fid"),
+        name: row.getAttribute("data-name") || "",
+        path: row.getAttribute("data-path") || "",
+      };
+      updateFolderPathLabel();
+    };
+    row.ondblclick = (ev) => {
+      ev.preventDefault();
+      enterFolder(row.getAttribute("data-fid"), row.getAttribute("data-name") || "", row.getAttribute("data-path") || "");
+    };
+  });
+  list.querySelectorAll(".folder-enter").forEach((btn) => {
+    btn.onclick = (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      enterFolder(btn.getAttribute("data-fid"), btn.getAttribute("data-name") || "", btn.getAttribute("data-path") || "");
     };
   });
 }
 
+function enterFolder(fid, name, path) {
+  if (!fid) return;
+  _folderStack.push({ fid: fid, name: name, path: path || name });
+  _folderSelected = null;
+  loadFolderList().catch((e) => toast(e.message || String(e), "err"));
+}
+
 function confirmFolderPicker() {
-  const cur = folderCurrent();
-  const path = cur.path || "";
+  const cur = folderEffective();
+  const path = (cur && cur.path) || "";
   if (_folderTargetInput) {
     _folderTargetInput.value = path;
+    _folderTargetInput.dispatchEvent(new Event("input", { bubbles: true }));
     _folderTargetInput.dispatchEvent(new Event("change", { bubbles: true }));
   }
-  toast(path ? `已选择：${path}` : "已选择网盘根目录", "ok");
+  toast(path ? ("已选择：/" + path) : "已选择网盘根目录 /", "ok");
   closeFolderPicker();
 }
 
@@ -1734,6 +1820,7 @@ document.addEventListener("click", (e) => {
   if (!t || !t.closest) return;
   if (t.closest("#btn-pick-inbox-root")) {
     e.preventDefault();
+    e.stopPropagation();
     openFolderPicker("set-tg-inbox-root");
     return;
   }
@@ -1741,6 +1828,7 @@ document.addEventListener("click", (e) => {
     e.preventDefault();
     const inp = document.getElementById("set-tg-inbox-root");
     if (inp) inp.value = "";
+    toast("已清空收链根目录", "ok");
     return;
   }
   if (t.closest("#folder-modal-cancel") || t.closest("#folder-modal-close")) {
@@ -1750,6 +1838,7 @@ document.addEventListener("click", (e) => {
   }
   if (t.closest("#folder-modal-ok")) {
     e.preventDefault();
+    e.stopPropagation();
     confirmFolderPicker();
     return;
   }
@@ -1757,4 +1846,6 @@ document.addEventListener("click", (e) => {
     closeFolderPicker();
   }
 }, true);
+
+
 
