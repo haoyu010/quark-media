@@ -789,6 +789,9 @@ function _setChannelStatusHtml(text, isHtml = false) {
   }
 }
 async function loadChannelStatus() {
+  /* channel status UI removed */
+  return null;
+
   const s = await api("/api/channel/status");
   if (!s.ok) {
     _setChannelStatusHtml("频道源不可用: " + (s.error || "unknown"), false);
