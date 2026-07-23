@@ -1653,7 +1653,7 @@ html[data-theme="light"] .btn.icon-only .i-moon { display: none; }
   margin-bottom: 8px;
 }
 .discover-toolbar h3 { margin: 0; font-size: 18px; letter-spacing: -.02em; }
-.discover-channel {
+.discover-channel-removed {
   margin-bottom: 12px;
   padding: 10px 12px;
   border-radius: 12px;
@@ -2009,3 +2009,5 @@ html:not([data-theme="light"]) .side-theme .i-moon { display: block; }
   font-size: 12px !important;
   border-radius: 999px !important;
 }
+
+#channel-status-box, .discover-channel { display: none !important; }

@@ -86,13 +86,13 @@ function setPage(name) {
   $("#scrim").hidden = true;
   if (name === "subs") {
     loadDiscover().catch(() => {});
-    loadChannelStatus().catch(() => {});
   }
   if (name === "mysubs") {
     loadSubscriptions().catch(() => {});
-    loadChannelStatus().catch(() => {});
   }
   if (name === "settings") {
+    // 每次进入设置都回填，否则表单保持 HTML 默认空/关
+    loadSettings().catch((e) => toast("加载设置失败: " + (e.message || e), "err"));
     loadTgStatus().catch(() => {});
   }
 }
@@ -470,10 +470,14 @@ async function loadSettings() {
   const data = await api("/api/settings");
   try {
     fillSettingsForm(data);
+    window.__qmSettingsHydrated = true;
   } catch (e) {
     console.error("fillSettingsForm", e);
+    window.__qmSettingsHydrated = false;
     toast("设置回填失败: " + (e.message || e), "err");
+    throw e;
   }
+  return data;
 }
 function collectSettingsPatch() {
   const el = (id) => document.getElementById(id);
@@ -537,6 +541,12 @@ function collectSettingsPatch() {
   return patch;
 }
 async function saveSettings() {
+  if (!window.__qmSettingsHydrated) {
+    try { await loadSettings(); } catch (_) {}
+  }
+  if (!window.__qmSettingsHydrated) {
+    return toast("设置尚未加载完成，请稍候再保存，以免覆盖为空", "err");
+  }
   const patch = collectSettingsPatch();
   Object.keys(patch).forEach((k) => { if (patch[k] === undefined) delete patch[k]; });
   if (!patch.cookie) delete patch.cookie;
