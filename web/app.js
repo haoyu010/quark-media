@@ -436,8 +436,6 @@ function fillSettingsForm(d) {
     if (box) box.textContent = JSON.stringify(s.subscriptions || [], null, 2);
   }).catch(()=>{});
   loadCategoryPreview();
-    if (box) box.textContent = "加载失败: " + (e.message || e);
-  });
 
   const sp = document.getElementById("settings-preview"); if (sp) sp.textContent = JSON.stringify(sanitizePreview(d), null, 2);
 }
