@@ -90,14 +90,7 @@ func SaveExtrasMerge(path string, patch map[string]any) (Extras, error) {
 		}
 		raw[k] = v
 	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return Extras{}, err
-	}
-	b, err := json.MarshalIndent(raw, "", "  ")
-	if err != nil {
-		return Extras{}, err
-	}
-	if err := os.WriteFile(path, b, 0o644); err != nil {
+	if err := writeJSONAtomic(path, raw); err != nil {
 		return Extras{}, err
 	}
 	return LoadExtras(path), nil
@@ -163,6 +156,41 @@ func ListTasks(path string) []map[string]any {
 		})
 	}
 	return out
+}
+
+func writeJSONAtomic(path string, raw map[string]any) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	b, err := json.MarshalIndent(raw, "", "  ")
+	if err != nil {
+		return err
+	}
+	tmp := path + ".tmp"
+	f, err := os.OpenFile(tmp, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o664)
+	if err != nil {
+		return err
+	}
+	if _, err := f.Write(b); err != nil {
+		f.Close()
+		_ = os.Remove(tmp)
+		return err
+	}
+	if err := f.Sync(); err != nil {
+		f.Close()
+		_ = os.Remove(tmp)
+		return err
+	}
+	if err := f.Close(); err != nil {
+		_ = os.Remove(tmp)
+		return err
+	}
+	if err := os.Rename(tmp, path); err != nil {
+		_ = os.Remove(tmp)
+		return err
+	}
+	_ = os.Chmod(path, 0o664)
+	return nil
 }
 
 func asStr(v any) string {
@@ -282,12 +310,5 @@ func UpsertTask(path, name, savePath, shareURL, passcode string) error {
 		list = append(list, item)
 	}
 	raw["tasklist"] = list
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	b, err := json.MarshalIndent(raw, "", "  ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, b, 0o644)
+	return writeJSONAtomic(path, raw)
 }

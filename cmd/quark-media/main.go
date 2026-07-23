@@ -7,8 +7,10 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"quark-media/internal/config"
+	"quark-media/internal/qas"
 	"quark-media/internal/quark"
 	"quark-media/internal/server"
 )
@@ -32,6 +34,11 @@ func main() {
 	}
 	_ = os.MkdirAll(cfg.StrmRoot, 0o755)
 	_ = os.MkdirAll(filepath.Dir(cfg.QASConfig), 0o755)
+
+
+	// Hydrate cookie from persistent QAS json if yaml empty (recover after partial saves).
+	hydrateFromData(cfg)
+	log.Printf("persist config=%s qas=%s strm=%s", cfg.Path, cfg.QASConfig, cfg.StrmRoot)
 
 	client := quark.New(cfg.Cookie, cfg.MURL)
 
@@ -97,4 +104,22 @@ func envOr(k, d string) string {
 		return v
 	}
 	return d
+}
+
+func hydrateFromData(cfg *config.Config) {
+	ex := qas.LoadExtras(cfg.QASConfig)
+	if strings.TrimSpace(cfg.Cookie) == "" && len(ex.Cookies) > 0 {
+		cfg.Cookie = ex.Cookies[0]
+		log.Printf("hydrate cookie from %s (len=%d)", cfg.QASConfig, len(cfg.Cookie))
+	}
+	if len(cfg.Accounts) == 0 && len(ex.Cookies) > 0 {
+		cfg.Accounts = append([]string{}, ex.Cookies...)
+	}
+	if strings.TrimSpace(cfg.TMDBAPIKey) == "" && strings.TrimSpace(ex.TMDBAPIKey) != "" {
+		cfg.TMDBAPIKey = ex.TMDBAPIKey
+	}
+	// ensure qas path always under /app/data when running in docker
+	if strings.TrimSpace(cfg.QASConfig) == "" {
+		cfg.QASConfig = "/app/data/quark_config.json"
+	}
 }

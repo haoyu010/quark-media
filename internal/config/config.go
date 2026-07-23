@@ -203,16 +203,38 @@ func (c *Config) Save() error {
 	if err := os.MkdirAll(filepath.Dir(c.Path), 0o755); err != nil {
 		return err
 	}
-	// avoid marshaling zero mutex issues — copy public fields via yaml tags on same struct
-	b, err := yaml.Marshal(c)
+	// Marshal a value copy so runtime fields (Path/mu) stay out of file.
+	out := *c
+	out.Path = ""
+	b, err := yaml.Marshal(&out)
 	if err != nil {
 		return err
 	}
 	tmp := c.Path + ".tmp"
-	if err := os.WriteFile(tmp, b, 0o644); err != nil {
+	f, err := os.OpenFile(tmp, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o664)
+	if err != nil {
 		return err
 	}
-	return os.Rename(tmp, c.Path)
+	if _, err := f.Write(b); err != nil {
+		f.Close()
+		_ = os.Remove(tmp)
+		return err
+	}
+	if err := f.Sync(); err != nil {
+		f.Close()
+		_ = os.Remove(tmp)
+		return err
+	}
+	if err := f.Close(); err != nil {
+		_ = os.Remove(tmp)
+		return err
+	}
+	if err := os.Rename(tmp, c.Path); err != nil {
+		_ = os.Remove(tmp)
+		return err
+	}
+	_ = os.Chmod(c.Path, 0o664)
+	return nil
 }
 
 func (c *Config) DataDir() string {

@@ -178,6 +178,42 @@ func readJSON(r *http.Request) (map[string]any, error) {
 	return m, nil
 }
 
+
+func persistInfo(cfg *config.Config) map[string]any {
+	check := func(p string) map[string]any {
+		st, err := os.Stat(p)
+		if err != nil {
+			return map[string]any{"path": p, "exists": false, "writable": canWrite(p), "error": err.Error()}
+		}
+		return map[string]any{
+			"path": p, "exists": true, "size": st.Size(), "mtime": st.ModTime().Unix(),
+			"writable": canWrite(p),
+		}
+	}
+	return map[string]any{
+		"config": check(cfg.Path),
+		"qas":    check(cfg.QASConfig),
+		"data":   check(filepath.Dir(cfg.QASConfig)),
+		"strm":   check(cfg.StrmRoot),
+		"note":   "升级镜像请只替换程序/前端，勿覆盖 ./config 与 ./data 宿主机目录",
+	}
+}
+
+func canWrite(p string) bool {
+	dir := p
+	if st, err := os.Stat(p); err == nil && !st.IsDir() {
+		dir = filepath.Dir(p)
+	}
+	f, err := os.CreateTemp(dir, ".qm-write-*")
+	if err != nil {
+		return false
+	}
+	name := f.Name()
+	_ = f.Close()
+	_ = os.Remove(name)
+	return true
+}
+
 func firstNonEmpty(vals ...string) string {
 	for _, v := range vals {
 		if strings.TrimSpace(v) != "" {
@@ -296,6 +332,7 @@ func (a *App) handleStatus(w http.ResponseWriter, r *http.Request) {
 			"inbox_root": firstNonEmpty(asStr(ex.TaskSettings["telegram_inbox_media_root"]), asStr(ex.TaskSettings["inbox_root"])),
 		},
 		"mtproto": map[string]any{"enabled": a.Cfg.Mtproto.Enabled, "running": a.mtpRunning},
+		"persist": persistInfo(a.Cfg),
 	})
 }
 
@@ -602,7 +639,7 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	view := a.Cfg.SettingsPublic()
 	view["qas_extras"] = qas.PublicExtras(qas.LoadExtras(a.Cfg.QASConfig))
-	writeJSON(w, 200, map[string]any{"ok": true, "settings": view})
+	writeJSON(w, 200, map[string]any{"ok": true, "settings": view, "persist": persistInfo(a.Cfg)})
 }
 
 
@@ -1230,8 +1267,13 @@ func (a *App) applyCookie(cookie string, appendAccount bool) error {
 	} else {
 		a.Cfg.Accounts[0] = cookie
 	}
-	_, _ = qas.SaveExtrasMerge(a.Cfg.QASConfig, map[string]any{"cookie": a.Cfg.Accounts})
-	return a.Cfg.Save()
+	if _, err := qas.SaveExtrasMerge(a.Cfg.QASConfig, map[string]any{"cookie": a.Cfg.Accounts}); err != nil {
+		return fmt.Errorf("save qas cookie: %w", err)
+	}
+	if err := a.Cfg.Save(); err != nil {
+		return fmt.Errorf("save config.yaml: %w", err)
+	}
+	return nil
 }
 
 func (a *App) handleQRStart(w http.ResponseWriter, r *http.Request) {

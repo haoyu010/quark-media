@@ -4,16 +4,19 @@ services:
     image: ghcr.io/haoyu010/quark-media:latest
     container_name: quark-media
     restart: unless-stopped
+    network_mode: bridge
     ports:
       - "${QM_PORT:-18025}:18025"
     environment:
       TZ: Asia/Shanghai
+      QM_CONFIG: /app/config/config.yaml
       QM_PUBLIC_BASE: ${QM_PUBLIC_BASE:-http://192.168.10.14:18025}
-      QM_STRM_ROOT: ${QM_STRM_ROOT:-/app/strm}
+      QM_STRM_ROOT: /app/strm
       EMBY_BASE_URL: ${EMBY_BASE_URL:-http://192.168.10.14:8096}
       EMBY_API_KEY: ${EMBY_API_KEY:-}
       EMBY_ENABLED: ${EMBY_ENABLED:-false}
+    # 持久化：升级镜像/重建容器不会丢数据（勿把这些目录打进镜像或被 deploy 覆盖）
     volumes:
-      - ./data:/app/data
-      - ./config:/app/config
-      - ${QM_STRM_HOST:-./strm}:/app/strm
+      - ./data:/app/data          # cookie / TG / 任务 / category / mtproto
+      - ./config:/app/config      # config.yaml 订阅/账号/Emby
+      - ${QM_STRM_HOST:-./strm}:/app/strm  # STRM 库
