@@ -67,6 +67,13 @@
       </nav>
 
       <div class="side-foot">
+        <button class="side-theme" id="btn-theme" type="button" title="切换明暗主题" aria-label="切换主题">
+          <span class="side-theme-icon">
+            <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 14.3A8.5 8.5 0 0 1 9.7 3 7 7 0 1 0 21 14.3z"/></svg>
+            <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" fill="none" stroke="currentColor"/></svg>
+          </span>
+          <span class="side-theme-text">切换主题</span>
+        </button>
         <div class="side-ver">v0.4 · Media Hub</div>
         <div class="status-pill" id="side-status">
           <i></i>
@@ -89,15 +96,6 @@
         </div>
         <div class="top-r">
           <span class="busy-dot" id="busy-dot" hidden title="请求中"></span>
-          <button class="btn soft icon-only" id="btn-theme" type="button" title="切换明暗主题" aria-label="切换主题">
-            <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 14.3A8.5 8.5 0 0 1 9.7 3 7 7 0 1 0 21 14.3z"/></svg>
-            <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" fill="none" stroke="currentColor"/></svg>
-          </button>
-          <button class="btn soft" id="btn-refresh" type="button">刷新</button>
-          <button class="btn primary" id="btn-run-once" type="button">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-            立即跑一轮
-          </button>
         </div>
       </header>
       <div class="top-progress" id="top-progress" hidden></div>
@@ -333,10 +331,6 @@
             <button class="btn soft" type="button" id="btn-discover-prev">上一页</button>
             <span id="discover-page-label">1 / 1</span>
             <button class="btn soft" type="button" id="btn-discover-next">下一页</button>
-          </div>
-          <div class="discover-to-mysubs">
-            <span>已订阅内容在「我的订阅」管理</span>
-            <button class="btn soft" type="button" data-goto="mysubs">打开我的订阅 →</button>
           </div>
         </section>
 

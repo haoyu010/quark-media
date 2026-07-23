@@ -1934,3 +1934,41 @@ body.modal-open { overflow: hidden; }
 .folder-item .meta { color: var(--muted); font-size: 12px; }
 #folder-modal[hidden] { display: none !important; }
 #folder-modal:not([hidden]) { display: flex !important; }
+
+
+/* sidebar theme switch (bottom) */
+.side-theme {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background .15s, border-color .15s, transform .15s;
+}
+.side-theme:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--panel-2));
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+}
+.side-theme-icon {
+  width: 28px; height: 28px;
+  border-radius: 10px;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.side-theme-icon svg { width: 16px; height: 16px; fill: currentColor; }
+html[data-theme="light"] .side-theme .i-moon { display: none; }
+html[data-theme="light"] .side-theme .i-sun { display: block; }
+html:not([data-theme="light"]) .side-theme .i-sun { display: none; }
+html:not([data-theme="light"]) .side-theme .i-moon { display: block; }
+.discover-to-mysubs { display: none !important; }

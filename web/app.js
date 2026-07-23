@@ -1320,10 +1320,14 @@ function bind() {
   $$(".nav-item").forEach(b => b.addEventListener("click", () => setPage(b.dataset.page)));
   $$("[data-goto]").forEach(b => b.addEventListener("click", () => setPage(b.dataset.goto)));
   $$("#settings-nav button").forEach(b => b.addEventListener("click", () => setSettingsSec(b.dataset.sec)));
-  const _bt = $("#btn-theme"); if (_bt) _bt.onclick = toggleTheme;
-  $("#btn-refresh").onclick = () => refreshAll();
-  $("#btn-run-once").onclick = () => runOnce().catch(e => toast(e.message));
-  $("#btn-run-tasks").onclick = () => runOnce().catch(e => toast(e.message));
+  const _bt = document.getElementById("btn-theme");
+  if (_bt) _bt.onclick = toggleTheme;
+  const _br = document.getElementById("btn-refresh");
+  if (_br) _br.onclick = () => refreshAll().catch(e => toast(e.message || String(e), "err"));
+  const _bo = document.getElementById("btn-run-once");
+  if (_bo) _bo.onclick = () => runOnce().catch(e => toast(e.message || String(e), "err"));
+  const _brt = document.getElementById("btn-run-tasks");
+  if (_brt) _brt.onclick = () => runOnce().catch(e => toast(e.message || String(e), "err"));
   $("#btn-reload-tasks").onclick = () => loadTasks().catch(e => toast(e.message));
   const btnAdd = $("#btn-add-task");
   if (btnAdd) btnAdd.onclick = () => openTaskModal("");
