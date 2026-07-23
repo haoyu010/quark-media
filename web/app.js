@@ -1344,17 +1344,17 @@ function bind() {
   const btnCatReload = document.getElementById("btn-category-reload");
   if (btnCatReload) btnCatReload.onclick = () => loadCategoryPreview().then(() => toast("分类规则已刷新","ok")).catch(e => toast(e.message));
   const btnQrOpen = document.getElementById("btn-qr-open");
-  if (btnQrOpen) btnQrOpen.onclick = () => openQrModal();
+  if (btnQrOpen) btnQrOpen.onclick = () => startQrLogin().catch(e => toast(e.message, "err"));
   const btnQrStart = document.getElementById("btn-qr-start");
   if (btnQrStart) btnQrStart.onclick = () => startQrLogin().catch(e => toast(e.message));
   const btnQrRefresh = document.getElementById("btn-qr-refresh");
   if (btnQrRefresh) btnQrRefresh.onclick = () => startQrLogin().catch(e => toast(e.message));
   const btnQrCancel = document.getElementById("btn-qr-cancel");
-  if (btnQrCancel) btnQrCancel.onclick = () => cancelQrLogin().catch(e => toast(e.message));
+  if (btnQrCancel) btnQrCancel.onclick = () => { try { cancelQrLogin(); } catch (e) { toast(e.message, "err"); } };
   const btnQrClose = document.getElementById("qr-modal-close");
-  if (btnQrClose) btnQrClose.onclick = () => cancelQrLogin().catch(e => toast(e.message));
+  if (btnQrClose) btnQrClose.onclick = () => { try { cancelQrLogin(); } catch (e) { toast(e.message, "err"); } };
   const qrModal = document.getElementById("qr-modal");
-  if (qrModal) qrModal.addEventListener("click", (e) => { if (e.target === qrModal) cancelQrLogin().catch(()=>{}); });
+  if (qrModal) qrModal.addEventListener("click", (e) => { if (e.target === qrModal) { try { cancelQrLogin(); } catch (_) {} } });
   $("#btn-settings-reload").onclick = () => loadSettings().then(() => toast("已重新加载")).catch(e => toast(e.message));
   $("#settings-form").addEventListener("submit", e => {
     e.preventDefault();
@@ -1457,15 +1457,10 @@ function openQrModal() {
   const modal = document.getElementById("qr-modal");
   if (!modal) return;
   modal.hidden = false;
-  setQrUi({ status: "—", message: "点击「生成二维码」开始", showImg: false, polling: false });
 }
 
 function closeQrModal() {
   stopQrPoll();
-  if (_qrId) {
-    api(`/api/quark/qr/cancel?id=${encodeURIComponent(_qrId)}`, { method: "POST" }).catch(() => {});
-    _qrId = null;
-  }
   const modal = document.getElementById("qr-modal");
   if (modal) modal.hidden = true;
 }
@@ -1484,18 +1479,21 @@ function setQrUi(state) {
       img.hidden = false;
       if (ph) ph.hidden = true;
     } else if (state.showImg === false) {
+      img.removeAttribute("src");
       img.hidden = true;
       if (ph) ph.hidden = false;
     }
   }
-  if (btnStart) btnStart.textContent = state.polling ? "等待扫码…" : "生成二维码";
-  if (btnStart) btnStart.disabled = !!state.polling;
+  if (btnStart) {
+    btnStart.textContent = state.polling ? "等待扫码…" : "重新生成";
+    btnStart.disabled = !!state.polling && state.status !== "错误" && state.status !== "已过期";
+  }
 }
 
 async function startQrLogin() {
   stopQrPoll();
   openQrModal();
-  setQrUi({ status: "请求中…", message: "正在生成二维码…", polling: true });
+  setQrUi({ status: "请求中…", message: "正在生成二维码…", showImg: false, polling: true });
   try {
     const res = await api("/api/quark/qr/start", { method: "POST" });
     if (!res.ok) throw new Error(res.error || "生成失败");
@@ -1503,17 +1501,17 @@ async function startQrLogin() {
     setQrUi({
       image: res.qr_image,
       status: "待扫码",
-      message: res.message || "请用夸克 App 扫码",
+      message: res.message || "请用夸克 App 扫码并在手机上确认",
       polling: true,
     });
     _qrTimer = setInterval(() => {
-      pollQrLogin().catch(e => {
+      pollQrLogin().catch((e) => {
         stopQrPoll();
         setQrUi({ status: "错误", message: e.message || String(e), polling: false });
       });
     }, 1600);
   } catch (e) {
-    setQrUi({ status: "错误", message: e.message || String(e), polling: false });
+    setQrUi({ status: "错误", message: e.message || String(e), showImg: false, polling: false });
     toast(e.message || String(e), "err");
   }
 }
@@ -1532,7 +1530,6 @@ async function pollQrLogin() {
     stopQrPoll();
     _qrId = null;
     toast(res.message || "Cookie 已写入", "ok");
-    // soft refresh account hints only — no full page reload / jump
     try {
       const data = await api("/api/settings");
       const hint = document.getElementById("cookie-hint");
@@ -1540,7 +1537,7 @@ async function pollQrLogin() {
       loadStatus().catch(() => {});
       loadAccounts().catch(() => {});
     } catch (_) {}
-    setTimeout(() => closeQrModal(), 600);
+    setTimeout(() => closeQrModal(), 500);
   } else if (res.status === "expired" || res.status === "error") {
     stopQrPoll();
     _qrId = null;
@@ -1548,14 +1545,16 @@ async function pollQrLogin() {
   }
 }
 
-async function cancelQrLogin() {
+function cancelQrLogin() {
   stopQrPoll();
-  if (_qrId) {
-    try { await api(`/api/quark/qr/cancel?id=${encodeURIComponent(_qrId)}`, { method: "POST" }); } catch (_) {}
-  }
+  const id = _qrId;
   _qrId = null;
+  if (id) {
+    api(`/api/quark/qr/cancel?id=${encodeURIComponent(id)}`, { method: "POST" }).catch(() => {});
+  }
   closeQrModal();
 }
+
 
 
 async function loadCategoryPreview() {
