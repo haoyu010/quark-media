@@ -176,6 +176,20 @@ func asStr(v any) string {
 	return s
 }
 
+func maskKeep(s string, keep int) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return ""
+	}
+	if keep < 0 {
+		keep = 0
+	}
+	if len(s) <= keep*2 {
+		return "****"
+	}
+	return s[:keep] + "****" + s[len(s)-keep:]
+}
+
 func PublicExtras(ex Extras) map[string]any {
 	pc := map[string]any{}
 	for k, v := range ex.PushConfig {
@@ -188,8 +202,10 @@ func PublicExtras(ex Extras) map[string]any {
 		pc["TG_BOT_TOKEN_SET"] = false
 	}
 	return map[string]any{
-		"tmdb_api_key":     "",
-		"tmdb_set":         ex.TMDBAPIKey != "",
+		"tmdb_api_key":        "",
+		"tmdb_set":            ex.TMDBAPIKey != "",
+		"tmdb_api_key_set":    ex.TMDBAPIKey != "",
+		"tmdb_api_key_masked": maskKeep(ex.TMDBAPIKey, 4),
 		"push_notify_type": ex.PushNotifyType,
 		"push_config":      pc,
 		"telegram_source":  ex.TelegramSource,

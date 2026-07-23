@@ -428,33 +428,15 @@
                   </div>
                   <span class="badge-soft">Quark</span>
                 </div>
-                                <div class="qr-login-panel" id="qr-login-box">
-                  <div class="qr-login-head">
-                    <div>
-                      <b>扫码登录</b>
-                      <div class="help">用夸克 App 扫码，自动写入 Cookie（无需手动粘贴）</div>
-                    </div>
-                    <div class="ops">
-                      <button class="btn primary" type="button" id="btn-qr-start">生成二维码</button>
-                      <button class="btn soft" type="button" id="btn-qr-refresh" hidden>刷新二维码</button>
-                      <button class="btn soft" type="button" id="btn-qr-cancel" hidden>取消</button>
-                    </div>
+
+                <div class="qr-login-entry">
+                  <div>
+                    <b>扫码登录</b>
+                    <div class="help">用夸克 App 扫码，自动写入 Cookie（无需手动粘贴）</div>
                   </div>
-                  <div class="qr-login-body" id="qr-login-body" hidden>
-                    <div class="qr-img-wrap">
-                      <img id="qr-image" alt="夸克扫码登录" width="220" height="220" />
-                    </div>
-                    <div class="qr-meta">
-                      <div class="row"><span>状态</span><b id="qr-status">—</b></div>
-                      <div class="help" id="qr-message">点击「生成二维码」开始</div>
-                      <label class="chk" style="margin-top:10px;display:flex;gap:8px;align-items:center">
-                        <input type="checkbox" id="qr-append-account" />
-                        <span>追加为多账号（不覆盖当前活动号）</span>
-                      </label>
-                      <div class="help" style="margin-top:8px">转存/列目录只靠 Cookie；302 取链若仍失败，请再配 m_url（kps/sign/vcode）。</div>
-                    </div>
-                  </div>
+                  <button class="btn primary" type="button" id="btn-qr-open">扫码登录</button>
                 </div>
+
 <div class="form-grid">
                   <div class="fg full">
                     <div class="fl">
@@ -947,5 +929,37 @@
   <div class="toast" id="toast"></div>
   <div class="scrim" id="scrim" hidden></div>
   <script src="/app.js"></script>
+
+  <div class="modal" id="qr-modal" hidden>
+    <div class="modal-card qr-modal-card">
+      <div class="modal-h">
+        <div>
+          <h3>夸克扫码登录</h3>
+          <p id="qr-modal-sub">请使用夸克 App 扫码并确认</p>
+        </div>
+        <button class="icon-btn" id="qr-modal-close" type="button" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body qr-modal-body">
+        <div class="qr-img-wrap" id="qr-img-wrap">
+          <img id="qr-image" alt="夸克扫码" width="220" height="220" hidden />
+          <div class="qr-placeholder" id="qr-placeholder">点击下方生成二维码</div>
+        </div>
+        <div class="qr-meta">
+          <div class="row"><span>状态</span><b id="qr-status">—</b></div>
+          <div class="help" id="qr-message">等待生成…</div>
+          <label class="chk" style="margin-top:12px;display:flex;gap:8px;align-items:center">
+            <input type="checkbox" id="qr-append-account" />
+            <span>追加为多账号（不覆盖当前活动号）</span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn soft" type="button" id="btn-qr-refresh">刷新二维码</button>
+        <button class="btn soft" type="button" id="btn-qr-cancel">取消</button>
+        <button class="btn primary" type="button" id="btn-qr-start">生成二维码</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

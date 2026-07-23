@@ -438,6 +438,7 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 		view["qas_extras"] = qas.PublicExtras(ex)
 		view["tmdb_api_key"] = ""
 		view["tmdb_set"] = ex.TMDBAPIKey != ""
+		view["tmdb_api_key_masked"] = config.MaskSecret(ex.TMDBAPIKey, 4)
 		writeJSON(w, 200, view)
 		return
 	}
