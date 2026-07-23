@@ -1802,3 +1802,48 @@ html[data-theme="light"] .btn.icon-only .i-moon { display: none; }
   color: var(--muted);
   font-size: 13px;
 }
+
+/* ========== Quark QR Login ========== */
+.qr-login-panel {
+  margin-bottom: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--grad-soft);
+}
+.qr-login-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.qr-login-body {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 18px;
+  margin-top: 14px;
+  align-items: center;
+}
+.qr-img-wrap {
+  width: 220px;
+  height: 220px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid var(--line-2);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.qr-img-wrap img {
+  width: 220px;
+  height: 220px;
+  display: block;
+}
+.qr-meta .row {
+  margin-bottom: 6px;
+}
+@media (max-width: 720px) {
+  .qr-login-body { grid-template-columns: 1fr; justify-items: center; }
+}

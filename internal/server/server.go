@@ -110,6 +110,9 @@ func (a *App) routes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/accounts", a.handleAccounts)
 	mux.HandleFunc("/api/accounts/active", a.handleAccountsActive)
 	mux.HandleFunc("/api/accounts/test", a.handleAccountsTest)
+	mux.HandleFunc("/api/quark/qr/start", a.handleQRStart)
+	mux.HandleFunc("/api/quark/qr/poll", a.handleQRPoll)
+	mux.HandleFunc("/api/quark/qr/cancel", a.handleQRCancel)
 	mux.HandleFunc("/api/emby/folders", a.handleEmbyFolders)
 	mux.HandleFunc("/api/emby/refresh", a.handleEmbyRefresh)
 	mux.HandleFunc("/api/tg-inbox", a.handleTgInbox)
@@ -808,7 +811,7 @@ func (a *App) handleEmbyRefresh(w http.ResponseWriter, r *http.Request) {
 		pathHint = asStr(body["media_path"])
 	}
 	ec := emby.New(a.Cfg.Emby.BaseURL, a.Cfg.Emby.APIKey).WithMediaRoot(a.Cfg.Emby.Path)
-	// prefer explicit path → only that media path / matching library
+	// prefer explicit path 鈫?only that media path / matching library
 	if pathHint != "" {
 		mp := ec.MapToEmbyPath(a.Cfg.StrmRoot, pathHint)
 		rr := ec.RefreshPaths([]string{mp})
@@ -1047,5 +1050,133 @@ func (a *App) handleMtpSignIn(w http.ResponseWriter, r *http.Request) {
 }
 func (a *App) handleMtpLogout(w http.ResponseWriter, r *http.Request) {
 	a.mtpRunning = false
+	writeJSON(w, 200, map[string]any{"ok": true})
+}
+
+func (a *App) applyCookie(cookie string, appendAccount bool) error {
+	cookie = strings.TrimSpace(cookie)
+	if cookie == "" {
+		return fmt.Errorf("empty cookie")
+	}
+	a.Cfg.Cookie = cookie
+	a.Client.SetCookie(cookie)
+	if appendAccount {
+		found := false
+		for _, c := range a.Cfg.Accounts {
+			if c == cookie {
+				found = true
+				break
+			}
+		}
+		if !found {
+			a.Cfg.Accounts = append(a.Cfg.Accounts, cookie)
+		}
+	} else if len(a.Cfg.Accounts) == 0 {
+		a.Cfg.Accounts = []string{cookie}
+	} else {
+		// replace active / first account
+		a.Cfg.Accounts[0] = cookie
+	}
+	// sync into qas cookie list when possible
+	_, _ = qas.SaveExtrasMerge(a.Cfg.QASConfig, map[string]any{"cookie": a.Cfg.Accounts})
+	return a.Cfg.Save()
+}
+
+func (a *App) handleQRStart(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost && r.Method != http.MethodGet {
+		writeJSON(w, 405, map[string]any{"ok": false, "error": "method"})
+		return
+	}
+	ss, err := quark.StartQRLogin()
+	if err != nil {
+		a.Log.Add("qr start fail: " + err.Error())
+		writeJSON(w, 500, map[string]any{"ok": false, "error": err.Error()})
+		return
+	}
+	a.Log.Add("qr login session " + ss.ID[:8] + "…")
+	writeJSON(w, 200, map[string]any{
+		"ok": true,
+		"id": ss.ID,
+		"status": ss.Status,
+		"message": ss.Message,
+		"qr_image": ss.QRImage,
+		"content": ss.Content,
+		"expires_at": ss.ExpiresAt.Unix(),
+	})
+}
+
+func (a *App) handleQRPoll(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodPost {
+		writeJSON(w, 405, map[string]any{"ok": false, "error": "method"})
+		return
+	}
+	id := strings.TrimSpace(r.URL.Query().Get("id"))
+	appendAcc := r.URL.Query().Get("append") == "1" || r.URL.Query().Get("append") == "true"
+	if id == "" && r.Method == http.MethodPost {
+		body, _ := readJSON(r)
+		id = asStr(body["id"])
+		if v, ok := body["append"].(bool); ok {
+			appendAcc = v
+		}
+	}
+	if id == "" {
+		writeJSON(w, 400, map[string]any{"ok": false, "error": "missing id"})
+		return
+	}
+	ss, err := quark.PollQRLogin(id)
+	if err != nil {
+		writeJSON(w, 404, map[string]any{"ok": false, "error": err.Error()})
+		return
+	}
+	out := map[string]any{
+		"ok": true,
+		"id": ss.ID,
+		"status": ss.Status,
+		"message": ss.Message,
+		"nickname": ss.Nickname,
+		"cookie_set": false,
+		"cookie_len": 0,
+		"cookie_masked": "",
+		"quark_ok": a.Client.CookieOK(),
+		"mparam_ok": a.Client.MParamOK(),
+	}
+	if ss.Status == "confirmed" && ss.Cookie != "" {
+		if err := a.applyCookie(ss.Cookie, appendAcc); err != nil {
+			out["ok"] = false
+			out["error"] = err.Error()
+			out["message"] = "登录成功但保存失败: " + err.Error()
+			writeJSON(w, 500, out)
+			return
+		}
+		// clear cookie from session after apply (security)
+		quark.CancelQRLogin(id)
+		// re-store confirmed without cookie for one last response? already cancelled
+		out["cookie_set"] = true
+		out["cookie_len"] = len(ss.Cookie)
+		out["cookie_masked"] = config.MaskSecret(ss.Cookie, 8)
+		out["quark_ok"] = a.Client.CookieOK()
+		out["mparam_ok"] = a.Client.MParamOK()
+		out["message"] = "登录成功，Cookie 已写入"
+		if ss.Nickname != "" {
+			out["message"] = "登录成功（" + ss.Nickname + "），Cookie 已写入"
+		}
+		a.Log.Add("qr login ok cookie_len=" + fmt.Sprint(len(ss.Cookie)))
+	}
+	writeJSON(w, 200, out)
+}
+
+func (a *App) handleQRCancel(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost && r.Method != http.MethodGet {
+		writeJSON(w, 405, map[string]any{"ok": false, "error": "method"})
+		return
+	}
+	id := strings.TrimSpace(r.URL.Query().Get("id"))
+	if id == "" {
+		body, _ := readJSON(r)
+		id = asStr(body["id"])
+	}
+	if id != "" {
+		quark.CancelQRLogin(id)
+	}
 	writeJSON(w, 200, map[string]any{"ok": true})
 }

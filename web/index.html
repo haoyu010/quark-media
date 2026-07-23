@@ -430,7 +430,34 @@
                   </div>
                   <span class="badge-soft">Quark</span>
                 </div>
-                <div class="form-grid">
+                                <div class="qr-login-panel" id="qr-login-box">
+                  <div class="qr-login-head">
+                    <div>
+                      <b>扫码登录</b>
+                      <div class="help">用夸克 App 扫码，自动写入 Cookie（无需手动粘贴）</div>
+                    </div>
+                    <div class="ops">
+                      <button class="btn primary" type="button" id="btn-qr-start">生成二维码</button>
+                      <button class="btn soft" type="button" id="btn-qr-refresh" hidden>刷新二维码</button>
+                      <button class="btn soft" type="button" id="btn-qr-cancel" hidden>取消</button>
+                    </div>
+                  </div>
+                  <div class="qr-login-body" id="qr-login-body" hidden>
+                    <div class="qr-img-wrap">
+                      <img id="qr-image" alt="夸克扫码登录" width="220" height="220" />
+                    </div>
+                    <div class="qr-meta">
+                      <div class="row"><span>状态</span><b id="qr-status">—</b></div>
+                      <div class="help" id="qr-message">点击「生成二维码」开始</div>
+                      <label class="chk" style="margin-top:10px;display:flex;gap:8px;align-items:center">
+                        <input type="checkbox" id="qr-append-account" />
+                        <span>追加为多账号（不覆盖当前活动号）</span>
+                      </label>
+                      <div class="help" style="margin-top:8px">转存/列目录只靠 Cookie；302 取链若仍失败，请再配 m_url（kps/sign/vcode）。</div>
+                    </div>
+                  </div>
+                </div>
+<div class="form-grid">
                   <div class="fg full">
                     <div class="fl">
                       <label>Cookie</label>
