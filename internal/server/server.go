@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -22,6 +23,7 @@ import (
 	"quark-media/internal/store"
 	"quark-media/internal/strm"
 	"quark-media/internal/subs"
+	"quark-media/internal/tginbox"
 	"quark-media/internal/tmdb"
 )
 
@@ -34,6 +36,7 @@ type App struct {
 	lastResult map[string]any
 	mtpRunning bool
 	tgRunning  bool
+	tgWorker   *tginbox.Worker
 	activeAcc  int
 }
 
@@ -42,6 +45,7 @@ func Listen(addr string, cfg *config.Config, client *quark.Client) error {
 	app.Log.Add("Quark Media (Go) started")
 	mux := http.NewServeMux()
 	app.routes(mux)
+	app.syncTgWorker(false)
 	if cfg.Interval > 0 {
 		go func() {
 			t := time.NewTicker(time.Duration(cfg.Interval) * time.Second)
@@ -328,13 +332,6 @@ func (a *App) handleStatus(w http.ResponseWriter, r *http.Request) {
 		embyOK = emby.New(a.Cfg.Emby.BaseURL, a.Cfg.Emby.APIKey).Ping()
 	}
 	ex := qas.LoadExtras(a.Cfg.QASConfig)
-	tgEnabled := false
-	if pc := ex.PushConfig; pc != nil {
-		if v, ok := pc["TG_ENABLED"].(bool); ok {
-			tgEnabled = v
-		}
-	}
-	hasToken := asStr(ex.PushConfig["TG_BOT_TOKEN"]) != ""
 	a.mu.Lock()
 	lastRun := a.lastRun
 	lastResult := a.lastResult
@@ -348,8 +345,9 @@ func (a *App) handleStatus(w http.ResponseWriter, r *http.Request) {
 		"emby_configured": embyConfigured, "emby_ok": embyOK,
 		"last_run": lastRun, "last_result": lastResult,
 		"tg_inbox": map[string]any{
-			"enabled": tgEnabled && hasToken, "running": a.tgRunning,
-			"has_token": hasToken, "has_user": asStr(ex.PushConfig["TG_USER_ID"]) != "",
+			"enabled": boolish(ex.PushConfig["TG_INBOX_AUTO_CREATE"]) && asStr(ex.PushConfig["TG_BOT_TOKEN"]) != "" && asStr(ex.PushConfig["TG_USER_ID"]) != "",
+			"running": a.tgWorker != nil && a.tgWorker.Running(),
+			"has_token": asStr(ex.PushConfig["TG_BOT_TOKEN"]) != "", "has_user": asStr(ex.PushConfig["TG_USER_ID"]) != "",
 			"inbox_root": firstNonEmpty(asStr(ex.TaskSettings["telegram_inbox_media_root"]), asStr(ex.TaskSettings["inbox_root"])),
 		},
 		"mtproto": map[string]any{"enabled": a.Cfg.Mtproto.Enabled, "running": a.mtpRunning},
@@ -659,6 +657,7 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.backupPersistFiles()
+	a.syncTgWorker(false)
 	view := a.Cfg.SettingsPublic()
 	view["qas_extras"] = qas.PublicExtras(qas.LoadExtras(a.Cfg.QASConfig))
 	writeJSON(w, 200, map[string]any{"ok": true, "settings": view, "persist": persistInfo(a.Cfg)})
@@ -1035,10 +1034,11 @@ func (a *App) handleTgInbox(w http.ResponseWriter, r *http.Request) {
 	ex := qas.LoadExtras(a.Cfg.QASConfig)
 	hasToken := asStr(ex.PushConfig["TG_BOT_TOKEN"]) != ""
 	hasUser := asStr(ex.PushConfig["TG_USER_ID"]) != ""
-	enabled := false
-	if v, ok := ex.PushConfig["TG_ENABLED"].(bool); ok {
-		enabled = v
-	}
+	// QAS: TG_INBOX_AUTO_CREATE + token + user_id
+	auto := boolish(ex.PushConfig["TG_INBOX_AUTO_CREATE"])
+	enabledNotify := boolish(ex.PushConfig["TG_ENABLED"])
+	running := a.tgWorker != nil && a.tgWorker.Running()
+	a.tgRunning = running
 	var missing []string
 	if !hasToken {
 		missing = append(missing, "TG_BOT_TOKEN")
@@ -1046,11 +1046,26 @@ func (a *App) handleTgInbox(w http.ResponseWriter, r *http.Request) {
 	if !hasUser {
 		missing = append(missing, "TG_USER_ID")
 	}
+	var events []any
+	lastErr := ""
+	if a.tgWorker != nil {
+		lastErr = a.tgWorker.LastError()
+		for _, e := range a.tgWorker.Events() {
+			events = append(events, map[string]any{"time": e.Time, "level": e.Level, "message": e.Message})
+		}
+	}
 	writeJSON(w, 200, map[string]any{
-		"ok": true, "enabled": enabled && hasToken, "running": a.tgRunning,
-		"has_token": hasToken, "has_user": hasUser,
-		"inbox_root": firstNonEmpty(asStr(ex.TaskSettings["telegram_inbox_media_root"]), asStr(ex.TaskSettings["inbox_root"])), "missing": missing,
-		"note": "Go core ready; bot inbox worker next",
+		"ok": true,
+		"enabled": auto && hasToken && hasUser,
+		"notify_enabled": enabledNotify,
+		"running": running,
+		"has_token": hasToken,
+		"has_user": hasUser,
+		"inbox_root": firstNonEmpty(asStr(ex.TaskSettings["telegram_inbox_media_root"]), asStr(ex.TaskSettings["inbox_root"])),
+		"missing": missing,
+		"last_error": lastErr,
+		"events": events,
+		"note": "QAS-compatible Bot getUpdates inbox",
 	})
 }
 
@@ -1058,10 +1073,19 @@ func (a *App) handleTgInboxAction(w http.ResponseWriter, r *http.Request) {
 	act := strings.TrimPrefix(r.URL.Path, "/api/tg-inbox/")
 	act = strings.Trim(act, "/")
 	switch act {
-	case "start", "restart":
-		a.tgRunning = true
+	case "start":
+		if err := a.syncTgWorker(true); err != nil {
+			writeJSON(w, 200, map[string]any{"ok": false, "error": err.Error(), "running": false})
+			return
+		}
+	case "restart":
+		a.stopTgWorker()
+		if err := a.syncTgWorker(true); err != nil {
+			writeJSON(w, 200, map[string]any{"ok": false, "error": err.Error(), "running": false})
+			return
+		}
 	case "stop":
-		a.tgRunning = false
+		a.stopTgWorker()
 	case "test":
 		msg, err := a.testTelegramBot()
 		if err != nil {
@@ -1070,8 +1094,207 @@ func (a *App) handleTgInboxAction(w http.ResponseWriter, r *http.Request) {
 		}
 		writeJSON(w, 200, map[string]any{"ok": true, "message": msg})
 		return
+	case "ingest":
+		// local pipeline test / external bridge (same path as TG message)
+		body, err := readJSON(r)
+		if err != nil {
+			writeJSON(w, 400, map[string]any{"ok": false, "error": err.Error()})
+			return
+		}
+		text := firstNonEmpty(asStr(body["text"]), asStr(body["message"]), asStr(body["share_url"]), asStr(body["url"]))
+		if text == "" {
+			writeJSON(w, 400, map[string]any{"ok": false, "error": "need text or share_url"})
+			return
+		}
+		links := tginbox.ExtractQuarkLinks(text)
+		if len(links) == 0 {
+			// maybe bare share id
+			if id := tginbox.NormalizeShareID(text); id != "" {
+				links = []string{"https://pan.quark.cn/s/" + id}
+			} else if strings.HasPrefix(strings.TrimSpace(text), "http") {
+				links = []string{strings.TrimSpace(text)}
+			}
+		}
+		if len(links) == 0 {
+			writeJSON(w, 200, map[string]any{"ok": false, "status": "no_link", "message": "未检测到夸克链接"})
+			return
+		}
+		title := firstNonEmpty(asStr(body["title"]), tginbox.ExtractTitle(text))
+		reply, err := a.processTgInboxShare(links[0], title, text)
+		if err != nil {
+			writeJSON(w, 200, map[string]any{"ok": false, "status": "error", "error": err.Error(), "message": err.Error()})
+			return
+		}
+		writeJSON(w, 200, map[string]any{"ok": true, "status": "created", "message": reply, "share_url": links[0]})
+		return
+	default:
+		writeJSON(w, 404, map[string]any{"ok": false, "error": "unknown action"})
+		return
 	}
-	writeJSON(w, 200, map[string]any{"ok": true, "running": a.tgRunning})
+	running := a.tgWorker != nil && a.tgWorker.Running()
+	a.tgRunning = running
+	writeJSON(w, 200, map[string]any{"ok": true, "running": running})
+}
+
+func buildTGProxy(pc map[string]any) string {
+	if pc == nil {
+		return ""
+	}
+	// full proxy URL override
+	if u := asStr(pc["TG_PROXY"]); u != "" {
+		return u
+	}
+	if u := asStr(pc["TG_PROXY_URL"]); u != "" {
+		return u
+	}
+	host := asStr(pc["TG_PROXY_HOST"])
+	port := asStr(pc["TG_PROXY_PORT"])
+	if host == "" || port == "" {
+		return ""
+	}
+	auth := asStr(pc["TG_PROXY_AUTH"])
+	if auth != "" {
+		return fmt.Sprintf("http://%s@%s:%s", auth, host, port)
+	}
+	return fmt.Sprintf("http://%s:%s", host, port)
+}
+
+func boolish(v any) bool {
+	switch t := v.(type) {
+	case bool:
+		return t
+	case string:
+		s := strings.TrimSpace(strings.ToLower(t))
+		return s == "1" || s == "true" || s == "yes" || s == "on"
+	case float64:
+		return t != 0
+	case int:
+		return t != 0
+	default:
+		return false
+	}
+}
+
+func (a *App) stopTgWorker() {
+	if a.tgWorker != nil {
+		a.tgWorker.Stop()
+		a.tgWorker = nil
+	}
+	a.tgRunning = false
+	a.Log.Add("tg inbox stopped")
+}
+
+// syncTgWorker starts/stops Bot getUpdates poller.
+// force=true: start even if TG_INBOX_AUTO_CREATE is off (manual start button).
+// force=false: only auto-start when QAS enabled condition met.
+func (a *App) syncTgWorker(force bool) error {
+	ex := qas.LoadExtras(a.Cfg.QASConfig)
+	token := asStr(ex.PushConfig["TG_BOT_TOKEN"])
+	user := asStr(ex.PushConfig["TG_USER_ID"])
+	host := asStr(ex.PushConfig["TG_API_HOST"])
+	auto := boolish(ex.PushConfig["TG_INBOX_AUTO_CREATE"])
+	want := (force || auto) && token != "" && user != ""
+	if !want {
+		if a.tgWorker != nil {
+			a.stopTgWorker()
+		}
+		return nil
+	}
+	if token == "" || user == "" {
+		return fmt.Errorf("缺少 TG_BOT_TOKEN 或 TG_USER_ID")
+	}
+	// already running with same credentials
+	if a.tgWorker != nil && a.tgWorker.Running() && a.tgWorker.Token == token && a.tgWorker.UserID == user {
+		a.tgRunning = true
+		return nil
+	}
+	a.stopTgWorker()
+	proxy := buildTGProxy(ex.PushConfig)
+	w := tginbox.New(token, user, host, proxy, a.Cfg.DataDir(), a.processTgInboxShare, func(s string) {
+		a.Log.Add(s)
+	})
+	if err := w.Start(); err != nil {
+		a.Log.Add("tg inbox start fail: " + err.Error())
+		return err
+	}
+	a.tgWorker = w
+	a.tgRunning = true
+	a.Log.Add("tg inbox worker running (QAS getUpdates)")
+	return nil
+}
+
+// processTgInboxShare implements QAS TelegramAutoCreateService.handle_message core path:
+// auth(already) → link → duplicate → build path → upsert tasklist → transfer+strm now → reply.
+func (a *App) processTgInboxShare(shareURL, title, rawText string) (string, error) {
+	shareURL = strings.TrimSpace(shareURL)
+	shareID := tginbox.NormalizeShareID(shareURL)
+	if shareID == "" {
+		return "", fmt.Errorf("未识别到夸克分享ID")
+	}
+
+	// duplicate by share id (QAS _is_duplicate)
+	for _, t := range qas.ListTasks(a.Cfg.QASConfig) {
+		if tginbox.NormalizeShareID(asStr(t["share_url"])) == shareID {
+			msg := "该分享链接已经创建过任务，已跳过"
+			a.Log.Add("tg inbox duplicate: " + shareURL)
+			return msg, nil
+		}
+	}
+	for _, t := range a.Cfg.Tasks {
+		if tginbox.NormalizeShareID(t.ShareURL) == shareID {
+			return "该分享链接已经创建过任务，已跳过", nil
+		}
+	}
+	for _, s := range a.Cfg.Subscriptions {
+		if tginbox.NormalizeShareID(s.ShareURL) == shareID {
+			return "该分享链接已在订阅中，已跳过", nil
+		}
+	}
+
+	seed := title
+	if seed == "" || seed == "TG收链资源" {
+		seed = tginbox.ExtractTitle(rawText)
+	}
+	seed = tginbox.SanitizeTitle(seed)
+	year := tginbox.ExtractYear(rawText + " " + seed)
+	season := tginbox.ExtractSeason(rawText + " " + seed)
+	if season <= 0 {
+		season = 1
+	}
+	contentType := "movie"
+	if tginbox.LooksLikeSeries(rawText + " " + seed) {
+		contentType = "tv"
+	}
+	root := a.resolveInboxRoot()
+	savePath := tginbox.BuildSavePath(root, contentType, seed, year, season, "")
+	if savePath == "" {
+		savePath = joinQuarkPath("转存", seed)
+	}
+
+	// upsert QAS tasklist (same fields QAS uses)
+	if err := qas.UpsertTask(a.Cfg.QASConfig, seed, savePath, shareURL, ""); err != nil {
+		return "", fmt.Errorf("写入任务失败: %w", err)
+	}
+	a.backupPersistFiles()
+	a.Log.Add(fmt.Sprintf("tg inbox created task: %s -> %s", seed, savePath))
+
+	if !a.Client.CookieOK() {
+		return fmt.Sprintf("已创建任务: %s\n路径: %s\n(Cookie未就绪，暂未转存)", seed, savePath), nil
+	}
+
+	// run_task now: transfer + strm (QAS run_telegram_inbox_task_now)
+	res := pipeline.RunOne(a.Cfg, a.Client, a.Log, map[string]any{
+		"name": seed, "save_path": savePath, "quark_path": savePath, "share_url": shareURL,
+		"source": "tg_inbox",
+	})
+	if errMsg := asStr(res["error"]); errMsg != "" {
+		return fmt.Sprintf("已创建任务并开始转存: %s\n路径: %s\n转存失败: %s", seed, savePath, errMsg), nil
+	}
+	videos := 0
+	if n, ok := res["videos"].(int); ok {
+		videos = n
+	}
+	return fmt.Sprintf("已创建任务并开始转存: %s\n路径: %s\n视频: %d", seed, savePath, videos), nil
 }
 
 func (a *App) testTelegramBot() (string, error) {
@@ -1090,12 +1313,23 @@ func (a *App) testTelegramBot() (string, error) {
 	}
 	host = strings.TrimPrefix(strings.TrimPrefix(host, "https://"), "http://")
 	host = strings.Trim(host, "/")
+	proxy := buildTGProxy(ex.PushConfig)
+	client := &http.Client{Timeout: 20 * time.Second}
+	if proxy != "" {
+		if u, err := url.Parse(proxy); err == nil {
+			client.Transport = &http.Transport{Proxy: http.ProxyURL(u)}
+		}
+	}
 
 	// 1) getMe
 	meURL := fmt.Sprintf("https://%s/bot%s/getMe", host, token)
-	resp, err := http.Get(meURL)
+	resp, err := client.Get(meURL)
 	if err != nil {
-		return "", fmt.Errorf("getMe 网络错误: %w", err)
+		hint := ""
+		if proxy == "" {
+			hint = "；飞牛直连 Telegram 常被墙，请在设置填 TG 代理(TG_PROXY_HOST/PORT) 或 TG_API_HOST 反代"
+		}
+		return "", fmt.Errorf("getMe 网络错误: %v%s", err, hint)
 	}
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
@@ -1122,7 +1356,7 @@ func (a *App) testTelegramBot() (string, error) {
 		return "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	resp2, err := http.DefaultClient.Do(req)
+	resp2, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("sendMessage 网络错误: %w", err)
 	}
@@ -1133,7 +1367,11 @@ func (a *App) testTelegramBot() (string, error) {
 	if resp2.StatusCode >= 300 || sm["ok"] != true {
 		return "", fmt.Errorf("sendMessage 失败(检查 User ID 是否给 Bot 发过 /start): %s", strings.TrimSpace(string(body2)))
 	}
-	return fmt.Sprintf("Bot @%s 已向 %s 发送测试消息", uname, user), nil
+	extra := ""
+	if proxy != "" {
+		extra = " (via proxy)"
+	}
+	return fmt.Sprintf("Bot @%s 已向 %s 发送测试消息%s", uname, user, extra), nil
 }
 
 func (a *App) tmdbClient() *tmdb.Client {

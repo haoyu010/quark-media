@@ -56,7 +56,7 @@ func New(cookie, mURL string) *Client {
 	c := &Client{
 		Cookie: strings.TrimSpace(cookie),
 		MParam: map[string]string{},
-		http:   &http.Client{Timeout: 45 * time.Second},
+		http:   &http.Client{Timeout: 90 * time.Second},
 		cache:  map[string]cacheItem{},
 		pathC:  map[string]string{},
 	}
@@ -495,25 +495,53 @@ func (c *Client) MkdirPath(p string) (string, error) {
 	if p == "" {
 		return "0", nil
 	}
-	// try resolve existing
 	if fid, err := c.PathToFID(p); err == nil {
 		return fid, nil
 	}
-	js, err := c.reqPC(http.MethodPost, "/1/clouddrive/file", nil, map[string]any{
-		"pdir_fid":  "0",
-		"file_name": "",
-		"dir_path":  "/" + p,
-		"dir_init_lock": false,
+	// bulk
+	_, _ = c.reqPC(http.MethodPost, "/1/clouddrive/file", nil, map[string]any{
+		"pdir_fid": "0", "file_name": "", "dir_path": "/" + p, "dir_init_lock": false,
 	})
-	if err != nil {
-		return "", err
+	c.mu.Lock(); c.pathC = map[string]string{}; c.mu.Unlock()
+	if fid, err := c.PathToFID(p); err == nil {
+		return fid, nil
 	}
-	// clear cache and resolve
-	c.mu.Lock()
-	c.pathC = map[string]string{}
-	c.mu.Unlock()
-	_ = js
-	return c.PathToFID(p)
+	// segment by segment
+	parent := "0"
+	acc := ""
+	for _, seg := range strings.Split(p, "/") {
+		seg = strings.TrimSpace(seg)
+		if seg == "" {
+			continue
+		}
+		if acc == "" {
+			acc = seg
+		} else {
+			acc = acc + "/" + seg
+		}
+		if fid, err := c.PathToFID(acc); err == nil {
+			parent = fid
+			continue
+		}
+		js, err := c.reqPC(http.MethodPost, "/1/clouddrive/file", nil, map[string]any{
+			"pdir_fid": parent, "file_name": seg, "dir_path": "", "dir_init_lock": false,
+		})
+		if err != nil {
+			return "", err
+		}
+		c.mu.Lock(); c.pathC = map[string]string{}; c.mu.Unlock()
+		data, _ := js["data"].(map[string]any)
+		fid := fmt.Sprint(data["fid"])
+		if fid == "" || fid == "<nil>" {
+			if f2, err2 := c.PathToFID(acc); err2 == nil {
+				parent = f2
+				continue
+			}
+			return "", fmt.Errorf("创建目录失败: %s", acc)
+		}
+		parent = fid
+	}
+	return parent, nil
 }
 
 func (c *Client) WaitTask(taskID string, timeoutSec int) error {
