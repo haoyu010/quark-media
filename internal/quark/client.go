@@ -633,6 +633,85 @@ func (c *Client) SaveShare(shareURL, savePath, passcode string) (map[string]any,
 	return map[string]any{"ok": true, "count": len(fidList), "to_pdir_fid": toFID, "response_status": js["status"]}, nil
 }
 
+
+// SaveShareFiltered saves only selected share files (QAS floor filter / startfid path).
+// keep returns true to include file map entry (dirs typically kept by caller filter).
+func (c *Client) SaveShareFiltered(shareURL, savePath, passcode string, keep func(map[string]any) bool) (map[string]any, error) {
+	pwdID, pc := c.ParseShare(shareURL)
+	if passcode != "" {
+		pc = passcode
+	}
+	if pwdID == "" {
+		return nil, fmt.Errorf("无效分享链接")
+	}
+	stoken, err := c.GetSToken(pwdID, pc)
+	if err != nil {
+		return nil, err
+	}
+	files, err := c.ShareList(pwdID, stoken, "0")
+	if err != nil {
+		return nil, err
+	}
+	if len(files) == 0 {
+		return map[string]any{"ok": false, "message": "分享为空", "count": 0}, nil
+	}
+	// expand single root dir one level like validate
+	if len(files) == 1 {
+		if dirFlag, _ := files[0]["dir"].(bool); dirFlag || fmt.Sprint(files[0]["file_type"]) == "0" {
+			fid := fmt.Sprint(files[0]["fid"])
+			if sub, err := c.ShareList(pwdID, stoken, fid); err == nil && len(sub) > 0 {
+				files = sub
+			}
+		}
+	}
+	if keep != nil {
+		var filtered []map[string]any
+		for _, f := range files {
+			if keep(f) {
+				filtered = append(filtered, f)
+			}
+		}
+		files = filtered
+	}
+	if len(files) == 0 {
+		return map[string]any{"ok": false, "message": "过滤后无可转存文件", "count": 0}, nil
+	}
+	fidList := make([]string, 0, len(files))
+	tokenList := make([]string, 0, len(files))
+	for _, f := range files {
+		fidList = append(fidList, fmt.Sprint(f["fid"]))
+		tok := fmt.Sprint(f["share_fid_token"])
+		if tok == "" || tok == "<nil>" {
+			tok = fmt.Sprint(f["fid_token"])
+		}
+		if tok == "<nil>" {
+			tok = ""
+		}
+		tokenList = append(tokenList, tok)
+	}
+	toFID, err := c.MkdirPath(savePath)
+	if err != nil {
+		return nil, err
+	}
+	params := url.Values{}
+	params.Set("app", "clouddrive")
+	params.Set("__dt", fmt.Sprint(rand.Intn(4*60*1000)+60*1000))
+	params.Set("__t", fmt.Sprint(time.Now().UnixMilli()))
+	js, err := c.reqPC(http.MethodPost, "/1/clouddrive/share/sharepage/save", params, map[string]any{
+		"fid_list": fidList, "fid_token_list": tokenList, "to_pdir_fid": toFID,
+		"pwd_id": pwdID, "stoken": stoken, "pdir_fid": "0", "scene": "link",
+	})
+	if err != nil {
+		return nil, err
+	}
+	data, _ := js["data"].(map[string]any)
+	taskID := fmt.Sprint(data["task_id"])
+	if taskID != "" && taskID != "<nil>" {
+		_ = c.WaitTask(taskID, 120)
+	}
+	return map[string]any{"ok": true, "count": len(fidList), "to_pdir_fid": toFID, "filtered": true}, nil
+}
+
 func (c *Client) Probe() bool {
 	return c.CookieOK()
 }

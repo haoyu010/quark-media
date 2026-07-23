@@ -130,8 +130,7 @@ func RunOne(cfg *config.Config, client *quark.Client, log *store.Logger, t map[s
 	}
 	res, err := client.SaveShare(share, qpath, asStr(t["passcode"]))
 	if err != nil {
-		// QAS: retry_save_after_auto_replace on invalid share
-		replaced := false
+		// QAS retry_save_after_auto_replace 1:1
 		if replace.IsInvalidShareErr(err) && !asBool(t["_auto_replace_retrying"]) {
 			if log != nil {
 				log.Add("share invalid, try auto replace: " + err.Error())
@@ -139,7 +138,9 @@ func RunOne(cfg *config.Config, client *quark.Client, log *store.Logger, t map[s
 			ex := qas.LoadExtras(cfg.QASConfig)
 			var chs []string
 			if v, ok := ex.TelegramSource["channels"].(string); ok {
-				for _, p := range strings.FieldsFunc(v, func(r rune) bool { return r == ',' || r == '\n' || r == ';' || r == '\r' }) {
+				for _, p := range strings.FieldsFunc(v, func(r rune) bool {
+					return r == ',' || r == '\n' || r == ';' || r == '\r'
+				}) {
 					p = strings.TrimSpace(p)
 					if p != "" {
 						chs = append(chs, p)
@@ -153,34 +154,56 @@ func RunOne(cfg *config.Config, client *quark.Client, log *store.Logger, t map[s
 					}
 				}
 			}
-			rep := replace.NewFromQAS(cfg.QASConfig, client, chs, func(s string) {
+			svc := replace.NewService(cfg.QASConfig, client, chs, func(s string) {
 				if log != nil {
 					log.Add(s)
 				}
 			})
-			// enable if settings say so; also allow env-like default from task_settings string "enabled"
-			rr := rep.TryReplace(t, err.Error())
-			item["auto_replace"] = rr
-			if rr.Replaced && rr.NewShareURL != "" {
-				_ = qas.UpdateTaskShare(cfg.QASConfig, name, share, rr.NewShareURL)
-				t["share_url"] = rr.NewShareURL
-				t["shareurl"] = rr.NewShareURL
+			// normalize task keys for QAS
+			t["taskname"] = name
+			t["shareurl"] = share
+			t["savepath"] = qpath
+			okRep, newShare, floor, startfid, msg := svc.RetrySaveAfterAutoReplace(t, err.Error())
+			item["auto_replace"] = map[string]any{
+				"replaced": okRep, "message": msg, "new_shareurl": newShare,
+				"saved_episode_floor": floor, "startfid": startfid,
+			}
+			if okRep && newShare != "" {
+				share = newShare
+				t["share_url"] = newShare
+				t["shareurl"] = newShare
 				t["_auto_replace_retrying"] = true
-				share = rr.NewShareURL
-				if log != nil {
-					log.Add("auto replace ok: " + rr.Message)
+				// save with episode floor filter (QAS filter_share_files_by_saved_episode_floor)
+				var keep func(map[string]any) bool
+				if floor != nil {
+					fval := *floor
+					keep = func(f map[string]any) bool {
+						// dirs keep
+						if b, ok := f["dir"].(bool); ok && b {
+							return true
+						}
+						ep := replace.EpisodeFromFileInfo(f)
+						return ep == nil || *ep > fval
+					}
 				}
-				res2, err2 := client.SaveShare(share, qpath, asStr(t["passcode"]))
+				var err2 error
+				if keep != nil {
+					res, err2 = client.SaveShareFiltered(share, qpath, asStr(t["passcode"]), keep)
+				} else {
+					res, err2 = client.SaveShare(share, qpath, asStr(t["passcode"]))
+				}
 				if err2 == nil {
-					res = res2
 					err = nil
-					replaced = true
 					item["share_url"] = share
+					if log != nil {
+						log.Add("auto replace retry save ok")
+					}
 				} else {
 					err = err2
 				}
+				delete(t, "_auto_replace_retrying")
 			} else if log != nil {
-				log.Add("auto replace skip: " + rr.Message)
+				log.Add("auto replace skip: " + msg)
 			}
 		}
 		if err != nil {
@@ -192,7 +215,6 @@ func RunOne(cfg *config.Config, client *quark.Client, log *store.Logger, t map[s
 			}
 			return item
 		}
-		_ = replaced
 	}
 	item["save"] = res
 	videos, err := client.WalkVideos(qpath, cfg.VideoExts, 12)

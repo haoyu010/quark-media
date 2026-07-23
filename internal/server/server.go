@@ -1774,17 +1774,23 @@ func (a *App) handleReplace(w http.ResponseWriter, r *http.Request) {
 	// force enable for manual try if global disabled? still respect settings, but allow force
 	ex := qas.LoadExtras(a.Cfg.QASConfig)
 	chs := channelList(ex, a.Cfg)
-	rep := replace.NewFromQAS(a.Cfg.QASConfig, a.Client, chs, func(s string) { a.Log.Add(s) })
+	svc := replace.NewService(a.Cfg.QASConfig, a.Client, chs, func(s string) { a.Log.Add(s) })
 	if asBool(body["force"]) || asStr(body["force"]) == "1" {
-		rep.Settings.Enabled = true
+		svc.Replacer.Settings.Enabled = true
 	}
-	rr := rep.TryReplace(task, reason)
-	if rr.Replaced && rr.NewShareURL != "" {
-		_ = qas.UpdateTaskShare(a.Cfg.QASConfig, firstNonEmpty(asStr(task["name"]), name), firstNonEmpty(asStr(task["share_url"]), share), rr.NewShareURL)
+	// normalize
+	if asStr(task["taskname"]) == "" {
+		task["taskname"] = firstNonEmpty(asStr(task["name"]), name)
+	}
+	if asStr(task["shareurl"]) == "" {
+		task["shareurl"] = firstNonEmpty(asStr(task["share_url"]), share)
+	}
+	rr := svc.TryAutoReplaceInvalidShareURL(task, reason)
+	if rr.Replaced {
 		a.backupPersistFiles()
-		// optional transfer now
 		if asBool(body["run"]) || asStr(body["run"]) == "1" {
 			task["share_url"] = rr.NewShareURL
+			task["shareurl"] = rr.NewShareURL
 			out := pipeline.RunOne(a.Cfg, a.Client, a.Log, task)
 			writeJSON(w, 200, map[string]any{"ok": true, "replace": rr, "transfer": out})
 			return

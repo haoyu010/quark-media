@@ -403,3 +403,76 @@ func UpdateTaskShare(path, name, oldShare, newShare string) error {
 	raw["tasklist"] = list
 	return writeJSONAtomic(path, raw)
 }
+
+
+// UpdateTaskShareFull updates shareurl/startfid/floor like QAS persist_auto_replaced_shareurl.
+func UpdateTaskShareFull(path, name, oldShare, newShare, startfid string, floor *int) error {
+	raw, err := LoadRaw(path)
+	if err != nil || raw == nil {
+		raw = map[string]any{}
+	}
+	newShare = strings.TrimSpace(newShare)
+	if newShare == "" {
+		return fmt.Errorf("empty new share")
+	}
+	list := []any{}
+	if v, ok := raw["tasklist"].([]any); ok {
+		list = v
+	}
+	name = strings.TrimSpace(name)
+	oldShare = strings.TrimSpace(oldShare)
+	changed := false
+	for i, it := range list {
+		m, _ := it.(map[string]any)
+		if m == nil {
+			continue
+		}
+		tn := asStr(m["taskname"])
+		if tn == "" {
+			tn = asStr(m["name"])
+		}
+		su := asStr(m["shareurl"])
+		if su == "" {
+			su = asStr(m["share_url"])
+		}
+		match := false
+		if name != "" && tn == name {
+			match = true
+		}
+		if oldShare != "" && su == oldShare {
+			match = true
+		}
+		if !match {
+			continue
+		}
+		m["shareurl"] = newShare
+		m["shareurl_ban"] = nil
+		if startfid != "" {
+			m["startfid"] = startfid
+		}
+		if floor != nil {
+			m["auto_replace_saved_episode_floor"] = *floor
+		}
+		list[i] = m
+		changed = true
+	}
+	if !changed {
+		item := map[string]any{
+			"taskname": name,
+			"shareurl": newShare,
+			"runweek":  []int{1, 2, 3, 4, 5, 6, 7},
+		}
+		if name == "" {
+			item["taskname"] = "replaced-task"
+		}
+		if startfid != "" {
+			item["startfid"] = startfid
+		}
+		if floor != nil {
+			item["auto_replace_saved_episode_floor"] = *floor
+		}
+		list = append(list, item)
+	}
+	raw["tasklist"] = list
+	return writeJSONAtomic(path, raw)
+}

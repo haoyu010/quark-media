@@ -356,13 +356,15 @@ func (r *Replacer) TryReplace(task map[string]any, reason string) Result {
 	res.OldShareURL = oldShare
 	res.NewShareURL = bestURL
 	res.Message = fmt.Sprintf("已替换失效链接：%s -> %s", oldShare, bestURL)
+	filesOut, _ := best.snap["files"].([]map[string]any)
+	// keep raw files for startfid selection; floor filter applied at save time
 	res.Best = map[string]any{
 		"shareurl": bestURL,
 		"taskname": asStr(best.cand["taskname"]),
 		"source":   asStr(best.cand["source"]),
 		"score":    best.score,
 		"reason":   best.why,
-		"files":    best.snap["files"],
+		"files":    filesOut,
 	}
 	return res
 }
@@ -640,17 +642,48 @@ func matchesAnyFilter(item map[string]any, words []string) bool {
 }
 
 func (r *Replacer) buildQualityBaseline(task map[string]any) map[string]any {
-	text := strings.Join([]string{
+	hintText := strings.Join([]string{
 		firstName(task),
+		firstSave(task),
+		asStr(task["pattern"]),
+		asStr(task["replace"]),
+		asStr(task["filterwords"]),
 		asStr(task["episode_naming"]),
 		asStr(task["sequence_naming"]),
-		asStr(task["pattern"]),
-		firstSave(task),
 	}, " ")
-	return map[string]any{
-		"required_resolution": extractMaxResolution(text),
-		"avg_size":            0.0, // without local file stats; QAS loads saved files if available
+	files := loadSavedFilesFromTask(task)
+	var names []string
+	for _, f := range files {
+		names = append(names, fileName(f))
 	}
+	savedText := strings.Join(names, " ")
+	req := extractMaxResolution(hintText)
+	if s := extractMaxResolution(savedText); s > req {
+		req = s
+	}
+	return map[string]any{
+		"required_resolution": req,
+		"avg_size":            avgSize(files),
+	}
+}
+
+func loadSavedFilesFromTask(task map[string]any) []map[string]any {
+	if task == nil {
+		return nil
+	}
+	switch v := task["_saved_files_for_baseline"].(type) {
+	case []map[string]any:
+		return v
+	case []any:
+		var out []map[string]any
+		for _, x := range v {
+			if m, ok := x.(map[string]any); ok {
+				out = append(out, m)
+			}
+		}
+		return out
+	}
+	return nil
 }
 
 // ScoreCandidate QAS score_candidate.
@@ -700,15 +733,27 @@ func (r *Replacer) ScoreCandidate(task, candidate, snapshot, baseline map[string
 	if reqSeason > 0 {
 		score += 10
 	} else if candSeason > 0 {
-		score += 4
+		score += 6
 	}
-	if candAvg > 0 {
+	if baseAvg > 0 {
+		if candAvg >= baseAvg*0.85 {
+			score += 10
+		} else {
+			score += 5
+		}
+	} else if candAvg > 0 {
 		score += 5
+	}
+	if asStr(candidate["source"]) != "" {
+		score += 3
+	}
+	if asStr(candidate["publish_date"]) != "" || asStr(candidate["datetime"]) != "" {
+		score += 2
 	}
 	if score > 100 {
 		score = 100
 	}
-	return score, "ok"
+	return score, "有效链接且质量达标"
 }
 
 func orUnknown(n int) any {
