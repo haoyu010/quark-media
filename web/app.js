@@ -98,6 +98,7 @@ function setPage(name) {
 }
 
 function setSettingsSec(sec) {
+  if (sec === "category") loadCategoryPreview().catch(()=>{});
   $$("#settings-nav button").forEach(b => b.classList.toggle("on", b.dataset.sec === sec));
   $$(".settings-sec").forEach(s => s.classList.toggle("show", s.id === `sec-${sec}`));
   if (sec === "accounts") loadAccounts().catch(() => {});
@@ -434,17 +435,7 @@ function fillSettingsForm(d) {
     const box = null && el("subs-preview");
     if (box) box.textContent = JSON.stringify(s.subscriptions || [], null, 2);
   }).catch(()=>{});
-  api("/api/category").then(c => {
-    const box = el("category-preview");
-    const hint = el("category-path-hint");
-    if (hint) hint.textContent = c.path ? ("路径 " + c.path) : "Docker 固定路径";
-    if (el("set-category-file") && c.path) el("set-category-file").value = c.path;
-    if (box) {
-      const view = c.raw ? c.raw : JSON.stringify(c.rules || c, null, 2);
-      box.textContent = view || "{}";
-    }
-  }).catch((e)=>{
-    const box = el("category-preview");
+  loadCategoryPreview();
     if (box) box.textContent = "加载失败: " + (e.message || e);
   });
 
@@ -1346,6 +1337,8 @@ function bind() {
     toast("日志已清空", "ok");
   };
   $("#btn-settings-save").onclick = () => saveSettings().catch(e => toast(e.message));
+  const btnCatReload = document.getElementById("btn-category-reload");
+  if (btnCatReload) btnCatReload.onclick = () => loadCategoryPreview().then(() => toast("分类规则已刷新","ok")).catch(e => toast(e.message));
   const btnQrStart = document.getElementById("btn-qr-start");
   if (btnQrStart) btnQrStart.onclick = () => startQrLogin().catch(e => toast(e.message));
   const btnQrRefresh = document.getElementById("btn-qr-refresh");
@@ -1530,3 +1523,24 @@ async function cancelQrLogin() {
   _qrId = null;
   setQrUi({ status: "已取消", message: "可重新生成二维码", polling: false });
 }
+
+
+async function loadCategoryPreview() {
+  const box = document.getElementById("category-preview");
+  const hint = document.getElementById("category-path-hint");
+  const pathInput = document.getElementById("set-category-file");
+  try {
+    const c = await api("/api/category");
+    if (pathInput) pathInput.value = c.path || "/app/data/category.yaml";
+    if (hint) hint.textContent = c.path ? ("Docker · " + c.path) : "Docker 固定路径";
+    if (box) {
+      if (c.raw && String(c.raw).trim()) box.textContent = c.raw;
+      else if (c.rules) box.textContent = JSON.stringify(c.rules, null, 2);
+      else box.textContent = JSON.stringify(c, null, 2);
+    }
+  } catch (e) {
+    if (box) box.textContent = "加载失败: " + (e.message || e);
+    if (hint) hint.textContent = "加载失败";
+  }
+}
+

@@ -415,8 +415,7 @@
               <button type="button" data-sec="tmdb">TMDB</button>
               <div class="sn-label">播放 &amp; 媒体库</div>
               <button type="button" data-sec="server">302 服务</button>
-              <button type="button" data-sec="strm">STRM 库</button>
-              <button type="button" data-sec="emby">Emby</button>
+<button type="button" data-sec="emby">Emby</button>
               <div class="sn-label">系统</div>
 </aside>
 
@@ -501,17 +500,27 @@
                 <div class="sec-title">
                   <div>
                     <h3>整理分类 category.yaml</h3>
-                    <p>类似 Casby 规则：关键词/类型 → 路径模板。TG 自动收链根目录见「TG 通知/收链」。</p>
+                    <p>类似 Casby：关键词/类型 → 路径模板。Docker 固定读取容器内规则文件，UI 只预览。</p>
                   </div>
                   <span class="badge-soft">Category</span>
                 </div>
+                <div class="help" style="margin-bottom:12px;padding:12px 14px;border-radius:12px;background:var(--grad-soft)">
+                  路径由挂载决定：容器内 <code>/app/data/category.yaml</code>（对应 compose 的 <code>./data</code>）。<br>
+                  改规则：编辑宿主机 <code>/vol1/1000/docker/quark-media/data/category.yaml</code> 后点刷新即可。
+                </div>
                 <div class="form-grid">
                   <div class="fg full">
-                    <label>category 文件路径</label>
-                    <input id="set-category-file" class="field" />
+                    <div class="fl">
+                      <label>当前规则文件</label>
+                      <span class="meta" id="category-path-hint">加载中…</span>
+                    </div>
+                    <input id="set-category-file" class="field mono" readonly value="/app/data/category.yaml" />
                   </div>
                 </div>
-                <pre class="code" id="category-preview">{}</pre>
+                <div class="page-actions" style="margin:12px 0">
+                  <button class="btn soft" type="button" id="btn-category-reload">刷新规则预览</button>
+                </div>
+                <pre class="code" id="category-preview">加载中…</pre>
               </section>
 
 <section class="settings-sec" id="sec-qas">
@@ -798,21 +807,7 @@
                 <input type="hidden" id="set-port" value="18025" />
               </section>
 
-              <section class="settings-sec" id="sec-strm">
-            <div class="card">
-              <div class="card-head">
-                <div>
-                  <h3>STRM 输出</h3>
-                  <p>路径不在 Web 配置。Docker 用卷挂载 / 环境变量自定义，Emby 扫该目录入库。</p>
-                </div>
-              </div>
-              <div class="help" style="padding:12px 14px 14px">
-                容器内固定 <code>/app/strm</code>。<br>
-                宿主机改 <code>QM_STRM_HOST</code>（compose 映射）或挂载目录即可。<br>
-                流程：<b>转存完成 → 生成 .strm → Emby 刷库</b>（不做扫库）。
-              </div>
-            </div>
-          </section>
+              
 
               <section class="settings-sec" id="sec-emby" data-enhanced="1">
                 <div class="sec-title">
