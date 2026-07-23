@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Quark Media · 媒体控制中心</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+  <div class="app" id="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">
+          <svg viewBox="0 0 36 36" fill="none" aria-hidden="true">
+            <rect width="36" height="36" rx="12" fill="url(#lg)"/>
+            <path d="M11 12.5h8.2c3.4 0 6.1 2.6 6.1 5.9S22.6 24.3 19.2 24.3H15.8l-3.4 4.3c-.45.57-1.4.25-1.4-.48V12.5z" fill="#fff"/>
+            <defs><linearGradient id="lg" x1="4" y1="2" x2="34" y2="34"><stop stop-color="#4F8CFF"/><stop offset="1" stop-color="#8B5CF6"/></linearGradient></defs>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-name">Quark Media</div>
+          <div class="brand-sub">转存 · STRM · 302</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <div class="nav-label">Overview</div>
+        <button class="nav-item active" data-page="dashboard" type="button">
+          <span class="ni">
+            <svg viewBox="0 0 24 24"><path d="M4 13h7V4H4v9zm0 7h7v-5H4v5zm9 0h7V11h-7v9zm0-16v5h7V4h-7z"/></svg>
+          </span>
+          总览
+        </button>
+
+        <div class="nav-label">Automation</div>
+        <button class="nav-item" data-page="subs" type="button" title="订阅追更">
+          <span class="ni"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.2H22l-6 4.8 2.3 7.2L12 16.8 5.7 21.2 8 14 2 9.2h7.6z"/></svg></span>
+          订阅追更
+        </button>
+        <button class="nav-item" data-page="mysubs" type="button" title="我的订阅">
+          <span class="ni"><svg viewBox="0 0 24 24"><path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h10v2H4v-2z"/></svg></span>
+          我的订阅
+          <em id="nav-sub-count">0</em>
+        </button>
+
+        <button class="nav-item" data-page="strm" type="button">
+          <span class="ni"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4c0-1.1.9-2 2-2zm8 1.5V8h4.5L14 3.5z"/></svg></span>
+          STRM 库
+        </button>
+        <button class="nav-item" data-page="play" type="button">
+          <span class="ni"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+          播放测试
+        </button>
+
+        <div class="nav-label">System</div>
+        <button class="nav-item" data-page="settings" type="button">
+          <span class="ni"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7 7 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.5.42l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.48a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.82 14.7a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.43.34.69.22l2.39-.96c.5.4 1.05.72 1.63.94l.36 2.54c.05.24.26.42.5.42h3.8c.24 0 .45-.18.5-.42l.36-2.54c.58-.22 1.12-.54 1.63-.94l2.39.96c.26.12.55.02.69-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg></span>
+          设置
+        </button>
+        <button class="nav-item" data-page="logs" type="button">
+          <span class="ni"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5V4zm2 3v2h10V7H7zm0 4v2h10v-2H7zm0 4v2h7v-2H7z"/></svg></span>
+          日志
+        </button>
+      </nav>
+
+      <div class="side-foot">
+        <div class="side-ver">v0.4 · Media Hub</div>
+        <div class="status-pill" id="side-status">
+          <i></i>
+          <div>
+            <strong>服务运行中</strong>
+            <span id="foot-port">:18025</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="top">
+        <div class="top-l">
+          <button class="icon-btn only-mobile" id="btn-menu" type="button" aria-label="菜单">☰</button>
+          <div>
+            <div class="crumb">首页 <span>/</span> <b id="crumb">总览</b></div>
+            <div class="top-desc" id="top-desc">运行状态与关键总览</div>
+          </div>
+        </div>
+        <div class="top-r">
+          <span class="busy-dot" id="busy-dot" hidden title="请求中"></span>
+          <button class="btn soft icon-only" id="btn-theme" type="button" title="切换明暗主题" aria-label="切换主题">
+            <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 14.3A8.5 8.5 0 0 1 9.7 3 7 7 0 1 0 21 14.3z"/></svg>
+            <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" fill="none" stroke="currentColor"/></svg>
+          </button>
+          <button class="btn soft" id="btn-refresh" type="button">刷新</button>
+          <button class="btn primary" id="btn-run-once" type="button">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            立即跑一轮
+          </button>
+        </div>
+      </header>
+      <div class="top-progress" id="top-progress" hidden></div>
+
+      <div class="stage">
+        <!-- DASHBOARD -->
+        <section class="page show" id="page-dashboard">
+          <section class="hero">
+            <div class="hero-bg"></div>
+            <div class="hero-body">
+              <div class="kicker">QUARK MEDIA HUB</div>
+              <h1>媒体控制中心</h1>
+              <p>转存追更 · 分类整理 · STRM 入库 · 302 直链播放。视频走夸克 CDN，不经 NAS 流量。</p>
+              <div class="chips" id="status-chips"></div>
+            </div>
+          </section>
+
+          <section class="metrics" id="metric-cards"></section>
+
+          <section class="flow" id="capability-flow" aria-label="能力链路">
+            <div class="flow-item f1"><div class="n">01</div><div class="t">转存追更</div><div class="d">QAS 多账号 / 任务 / TG 收链</div></div>
+            <div class="flow-item f2"><div class="n">02</div><div class="t">整理分类</div><div class="d">category.yaml 路径规则</div></div>
+            <div class="flow-item f3"><div class="n">03</div><div class="t">生成 STRM</div><div class="d">扫库写 .strm 入库 Emby</div></div>
+            <div class="flow-item f4"><div class="n">04</div><div class="t">302 播放</div><div class="d">转码 m3u8 直连 CDN</div></div>
+            <div class="flow-item f5"><div class="n">05</div><div class="t">媒体库</div><div class="d">Emby / Jellyfin 刷库</div></div>
+          </section>
+
+
+          <section class="bento">
+            <article class="panel">
+              <header><h3>系统连接</h3></header>
+              <div id="conn-rows" class="stack"></div>
+            </article>
+            <article class="panel">
+              <header><h3>流水线</h3></header>
+              <div id="stat-rows" class="stack"></div>
+            </article>
+            <article class="panel">
+              <header><h3>服务信息</h3></header>
+              <div id="svc-rows" class="stack"></div>
+            </article>
+            <article class="panel">
+              <header><h3>任务预览</h3><button class="text-btn" data-goto="tasks" type="button">全部</button></header>
+              <div id="task-preview" class="empty">加载中…</div>
+            </article>
+            <article class="panel">
+              <header><h3>302 跳转</h3></header>
+              <div id="redirect-stats" class="mini-3"></div>
+            </article>
+            <article class="panel">
+              <header><h3>最近 STRM</h3><button class="text-btn" data-goto="strm" type="button">媒体库</button></header>
+              <div id="recent-strm" class="empty">加载中…</div>
+            </article>
+          </section>
+        </section>
+
+        <!-- TASKS -->
+        <section class="page" id="page-tasks">
+          <div class="page-head">
+            <div>
+              <h2>任务管理</h2>
+              <p>可增删改。QAS 任务写入 <b>quark_config.json</b>；本地任务写入 <b>config.yaml</b>。</p>
+            </div>
+            <div class="page-actions">
+              <button class="btn soft" id="btn-reload-tasks" type="button">刷新</button>
+              <button class="btn soft" id="btn-add-task" type="button">新建任务</button>
+              <button class="btn primary" id="btn-run-tasks" type="button">执行全部</button>
+            </div>
+          </div>
+          <article class="panel table-panel">
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>名称</th><th>保存路径</th><th>分享链接</th><th>正则</th>
+                    <th>启用</th><th>来源</th><th style="width:160px">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="tasks-body"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <!-- Task Modal -->
+        <div class="modal" id="task-modal" hidden>
+          <div class="modal-card">
+            <div class="modal-h">
+              <div>
+                <h3 id="task-modal-title">新建任务</h3>
+                <p id="task-modal-sub">保存后立即写入配置文件</p>
+              </div>
+              <button class="icon-btn" id="task-modal-close" type="button" aria-label="关闭">✕</button>
+            </div>
+            <form id="task-form" class="modal-body">
+              <input type="hidden" id="task-id" />
+              <div class="form-grid">
+                <div class="fg full">
+                  <label>保存到</label>
+                  <select id="task-source" class="field">
+                    <option value="qas">QAS（quark-auto-save-x）</option>
+                    <option value="config">本地 config.yaml</option>
+                  </select>
+                </div>
+                <div class="fg full">
+                  <label>任务名称</label>
+                  <input id="task-name" class="field" placeholder="例如 黑镜 S01" required />
+                </div>
+                <div class="fg full">
+                  <label>保存路径（网盘）</label>
+                  <input id="task-savepath" class="field" placeholder="影视/剧集/黑镜" />
+                </div>
+                <div class="fg full">
+                  <label>分享链接</label>
+                  <input id="task-shareurl" class="field" placeholder="https://pan.quark.cn/s/xxxx" />
+                </div>
+                <div class="fg">
+                  <label>提取码（可选）</label>
+                  <input id="task-passcode" class="field" placeholder="4位" />
+                </div>
+                <div class="fg">
+                  <label>STRM 子目录（本地任务）</label>
+                  <input id="task-strm" class="field" placeholder="tv / movies" />
+                </div>
+                <div class="fg full">
+                  <label>匹配正则 pattern</label>
+                  <input id="task-pattern" class="field mono" placeholder="(\d{4}).* 或 黑镜 - S01E[]" />
+                </div>
+                <div class="fg full">
+                  <label>替换 replace</label>
+                  <input id="task-replace" class="field mono" placeholder="黑镜 - S01E{}" />
+                </div>
+                <div class="fg">
+                  <label class="toggle-row" style="margin:0"><span>启用</span><input type="checkbox" id="task-enabled" checked /><i></i></label>
+                </div>
+                <div class="fg">
+                  <label class="toggle-row" style="margin:0"><span>执行转存</span><input type="checkbox" id="task-dosave" checked /><i></i></label>
+                </div>
+              </div>
+              <div class="modal-actions">
+                <button class="btn soft" type="button" id="task-cancel">取消</button>
+                <button class="btn primary" type="submit" id="task-save">保存任务</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- STRM -->
+        <section class="page" id="page-strm">
+          <div class="page-head">
+            <div>
+              <h2>STRM 媒体库</h2>
+              <p>Emby 扫描此目录。文件仅为跳转文本，不含视频实体。</p>
+            </div>
+          </div>
+          <article class="panel table-panel">
+            <div class="info-line" id="strm-root-info"></div>
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>文件</th><th>播放地址</th><th>操作</th></tr></thead>
+                <tbody id="strm-body"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <!-- PLAY -->
+        <section class="page" id="page-play">
+          <div class="page-head">
+            <div>
+              <h2>播放测试</h2>
+              <p>输入夸克 fid，验证转码 302 → m3u8 是否可用。</p>
+            </div>
+          </div>
+          <article class="panel play-panel">
+            <label class="flabel" for="play-fid">文件 FID</label>
+            <div class="play-row">
+              <input id="play-fid" class="field" placeholder="f46d7fb75b2a4178b2ec2398eebae719" />
+              <button class="btn primary" id="btn-test-play" type="button">获取直链</button>
+            </div>
+            <p class="tip">成功后可复制 proxy_url 给 Emby / 播放器测试。</p>
+            <pre class="code" id="play-result">等待测试…</pre>
+          </article>
+        </section>
+
+
+        <!-- SUBS standalone page -->
+        <section class="page" id="page-subs">
+          <section class="discover-hero">
+            <div class="discover-hero-bg"></div>
+            <div class="discover-hero-body">
+              <div class="kicker">TMDB DISCOVER</div>
+              <h1>发现热门影视，一键订阅追更。</h1>
+              <p>浏览 TMDB 热门、趋势和搜索结果，快速查看评分与订阅状态；未订阅内容可直接一键入库。</p>
+              <div class="discover-tabs" id="discover-tabs">
+                <button type="button" class="chip-btn on" data-tab="hot_movie">热门电影</button>
+                <button type="button" class="chip-btn" data-tab="hot_tv">热门剧集</button>
+                <button type="button" class="chip-btn" data-tab="trend_movie">趋势电影</button>
+                <button type="button" class="chip-btn" data-tab="trend_tv">趋势剧集</button>
+              </div>
+            </div>
+            <div class="discover-hero-side" id="discover-hero-side">
+              <div class="discover-stack" id="discover-stack"></div>
+              <div class="discover-count"><span>当前结果</span><b id="discover-count">0</b></div>
+            </div>
+          </section>
+
+          <div class="discover-search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 3a7.5 7.5 0 015.9 12.1l4 4a1 1 0 01-1.4 1.4l-4-4A7.5 7.5 0 1110.5 3zm0 2a5.5 5.5 0 100 11 5.5 5.5 0 000-11z"/></svg>
+            <input id="discover-q" class="field" placeholder="聚合搜索电影 / 电视剧，回车或停顿后查询" />
+            <button class="btn soft" type="button" id="btn-discover-search">搜索</button>
+            <button class="btn soft" type="button" id="btn-discover-reload">刷新</button>
+          </div>
+
+          <div class="discover-toolbar">
+            <div>
+              <h3 id="discover-title">热门电影</h3>
+              <p id="discover-meta" class="help">TMDB · 加载中…</p>
+            </div>
+            <div class="page-actions">
+              <button class="btn soft" type="button" id="btn-channel-status">频道状态</button>
+              <button class="btn soft" type="button" id="btn-channel-index">索引频道</button>
+              <button class="btn soft" type="button" id="btn-subs-search-all">批量搜链</button>
+              <button class="btn primary" type="button" data-action="sub-add">手动新建</button>
+            </div>
+          </div>
+          <div id="channel-status-box" class="help discover-channel">频道源：点击「频道状态」查看</div>
+
+          <div id="discover-grid" class="poster-grid">
+            <div class="empty">加载海报中…</div>
+          </div>
+          <div class="discover-pager">
+            <button class="btn soft" type="button" id="btn-discover-prev">上一页</button>
+            <span id="discover-page-label">1 / 1</span>
+            <button class="btn soft" type="button" id="btn-discover-next">下一页</button>
+          </div>
+          <div class="discover-to-mysubs">
+            <span>已订阅内容在「我的订阅」管理</span>
+            <button class="btn soft" type="button" data-goto="mysubs">打开我的订阅 →</button>
+          </div>
+        </section>
+
+<!-- SETTINGS -->
+        
+        <!-- MY SUBSCRIPTIONS -->
+        <section class="page" id="page-mysubs">
+          <div class="page-head">
+            <div>
+              <h2>我的订阅</h2>
+              <p>已入库订阅列表。订阅后自动频道搜链并同步 QAS 转存任务；可手动搜链 / 编辑 / 删除。海报墙在「订阅追更」。</p>
+            </div>
+            <div class="page-actions">
+              <button class="btn soft" type="button" data-goto="subs">去海报墙</button>
+              <button class="btn soft" type="button" id="btn-channel-status-2">频道状态</button>
+              <button class="btn soft" type="button" id="btn-subs-search-all-2">批量搜链</button>
+              <button class="btn soft" type="button" id="btn-subs-reload">刷新列表</button>
+              <button class="btn primary" type="button" id="btn-subs-add">新建订阅</button>
+            </div>
+          </div>
+
+          <article class="panel" style="min-height:auto;margin-bottom:12px">
+            <header style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px 0">
+              <h3 style="margin:0">频道搜链状态</h3>
+              <span class="badge-soft">Telegram</span>
+            </header>
+            <div id="channel-status-box-mysubs" class="help" style="padding:4px 14px 14px">频道源：点击「频道状态」查看</div>
+          </article>
+
+          <article class="panel table-panel">
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:72px">海报</th>
+                    <th>名称</th>
+                    <th>类型</th>
+                    <th>保存路径</th>
+                    <th>分享链</th>
+                    <th>TMDB</th>
+                    <th>状态</th>
+                    <th style="width:200px">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="subs-body">
+                  <tr><td colspan="8" style="color:var(--muted)">加载中…</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="help" style="padding:12px 14px 14px">数据写入 <b>config.yaml → subscriptions</b>。定时扫库：<code>python main.py run</code>。</div>
+          </article>
+        </section>
+<section class="page" id="page-settings">
+          <div class="page-head">
+            <div>
+              <h2>系统设置</h2>
+              <p>分区配置，保存写入 <b>config.yaml</b>。密钥留空表示不修改。</p>
+            </div>
+            <div class="page-actions">
+              <button class="btn soft" id="btn-settings-reload" type="button">重置表单</button>
+              <button class="btn primary" id="btn-settings-save" type="button">保存全部设置</button>
+            </div>
+          </div>
+
+          <div class="settings-layout">
+                        <aside class="settings-nav" id="settings-nav">
+              <div class="sn-label">账号</div>
+              <button type="button" class="on" data-sec="account">账号签名</button>
+              <button type="button" data-sec="accounts">夸克多账号</button>
+              <div class="sn-label">自动化</div>
+              <button type="button" data-sec="qas">QAS 转存</button>
+              <button type="button" data-sec="category">整理分类</button>
+              <button type="button" data-sec="tg">TG 通知/收链</button>
+              <button type="button" data-sec="source">TG 频道源</button>
+              <button type="button" data-sec="mtproto">MTProto 实时</button>
+              <button type="button" data-sec="tmdb">TMDB</button>
+              <div class="sn-label">播放 &amp; 媒体库</div>
+              <button type="button" data-sec="server">302 服务</button>
+              <button type="button" data-sec="strm">STRM 库</button>
+              <button type="button" data-sec="emby">Emby</button>
+              <div class="sn-label">系统</div>
+              <button type="button" data-sec="file">配置文件</button>
+            </aside>
+
+            <form id="settings-form" class="settings-main" autocomplete="off">
+              <section class="settings-sec show" id="sec-account">
+                <div class="sec-title">
+                  <div>
+                    <h3>账号与签名</h3>
+                    <p>夸克 Cookie 与移动端 m_url 签名，用于转存与 302 取链。</p>
+                  </div>
+                  <span class="badge-soft">Quark</span>
+                </div>
+                <div class="form-grid">
+                  <div class="fg full">
+                    <div class="fl">
+                      <label>Cookie</label>
+                      <span class="meta" id="cookie-hint">未配置</span>
+                    </div>
+                    <textarea id="set-cookie" class="field mono" rows="4" placeholder="粘贴完整 Cookie；留空则保留原值"></textarea>
+                  </div>
+                  <div class="fg full">
+                    <div class="fl">
+                      <label>m_url</label>
+                      <span class="meta" id="murl-hint">未配置</span>
+                    </div>
+                    <textarea id="set-murl" class="field mono" rows="3" placeholder="含 kps/sign/vcode/ut 的 drive-m URL；留空保留原值"></textarea>
+                  </div>
+                  <div class="fg">
+                    <label>m_url 文件路径</label>
+                    <input id="set-murl-file" class="field" placeholder="C:/path/quark_mobile_request_url.txt" />
+                  </div>
+                  <div class="fg">
+                    <label>OpenList DB</label>
+                    <input id="set-openlist-db" class="field" placeholder="C:/path/openlist_tmp.db" />
+                  </div>
+                </div>
+              </section>
+
+              
+              <section class="settings-sec" id="sec-accounts">
+                <div class="sec-title">
+                  <div>
+                    <h3>夸克多账号</h3>
+                    <p>多 Cookie 分隔保存；可切换当前活动账号（转存/列目录/302 使用活动号）。</p>
+                  </div>
+                  <span class="badge-soft">Accounts</span>
+                </div>
+                <div class="page-actions" style="margin-bottom:12px">
+                  <button class="btn soft" type="button" id="btn-acc-reload">刷新账号</button>
+                </div>
+                <div id="accounts-list" class="stack" style="margin-bottom:14px"><div class="empty">加载中…</div></div>
+                <div class="form-grid">
+                  <div class="fg full">
+                    <div class="fl"><label>账号 Cookie 列表</label><span class="meta" id="accounts-count">0 个账号</span></div>
+                    <textarea id="set-cookies-text" class="field mono" rows="10" placeholder="账号1完整Cookie&#10;&#10;-----ACCOUNT-----&#10;&#10;账号2完整Cookie"></textarea>
+                    <div class="help">保存写入 QAS cookie。列表可切换活动账号，立即热更新。</div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="settings-sec" id="sec-category">
+                <div class="sec-title">
+                  <div>
+                    <h3>整理分类 category.yaml</h3>
+                    <p>类似 Casby 规则：关键词/类型 → 路径模板。TG 自动收链根目录见「TG 通知/收链」。</p>
+                  </div>
+                  <span class="badge-soft">Category</span>
+                </div>
+                <div class="form-grid">
+                  <div class="fg full">
+                    <label>category 文件路径</label>
+                    <input id="set-category-file" class="field" />
+                  </div>
+                </div>
+                <pre class="code" id="category-preview">{}</pre>
+              </section>
+
+<section class="settings-sec" id="sec-qas">
+                <div class="sec-title">
+                  <div>
+                    <h3>QAS 转存引擎</h3>
+                    <p>转存/追更/命名/过滤全部走 quark-auto-save-x 源码。</p>
+                  </div>
+                  <span class="badge-soft">Auto Save</span>
+                </div>
+                <div class="toggle-list">
+                  <label class="toggle-row"><span>启用 QAS 转存</span><input type="checkbox" id="set-use-qas" /><i></i></label>
+                  <label class="toggle-row"><span>导入 QAS 任务列表</span><input type="checkbox" id="set-import-qas" /><i></i></label>
+                  <label class="toggle-row"><span>写回 QAS 配置（一般关闭）</span><input type="checkbox" id="set-qas-writeback" /><i></i></label>
+                </div>
+                <div class="form-grid">
+                  <div class="fg full">
+                    <label>QAS 根目录</label>
+                    <input id="set-qas-root" class="field" placeholder="C:/Users/.../quark-auto-save-x" />
+                  </div>
+                  <div class="fg full">
+                    <label>QAS 配置文件</label>
+                    <input id="set-qas-config" class="field" placeholder=".../config/quark_config.json" />
+                  </div>
+                </div>
+              </section>
+
+              
+              <section class="settings-sec" id="sec-tg">
+                <div class="sec-title">
+                  <div>
+                    <h3>Telegram 通知 / 自动收链</h3>
+                    <p>写入 QAS 配置。开启「自动收链」后：转发夸克链接到 Bot → TMDB 识别 → 按根目录自动整理路径 → 建任务并转存。</p>
+                  </div>
+                  <span class="badge-soft">Telegram</span>
+                </div>
+
+                <div class="panel" style="margin-bottom:16px;min-height:auto">
+                  <header>
+                    <h3>收链运行状态</h3>
+                    <div class="page-actions">
+                      <button class="btn soft" type="button" id="btn-tg-refresh">刷新</button>
+                      <button class="btn soft" type="button" id="btn-tg-test">测 Bot</button>
+                      <button class="btn soft" type="button" id="btn-tg-start">启动</button>
+                      <button class="btn soft" type="button" id="btn-tg-stop">停止</button>
+                      <button class="btn primary" type="button" id="btn-tg-restart">重启</button>
+                    </div>
+                  </header>
+                  <div id="tg-status-rows" class="stack" style="padding:8px 12px 12px">
+                    <div class="empty">点击刷新查看状态</div>
+                  </div>
+                </div>
+
+                <div class="toggle-list">
+                  <label class="toggle-row"><span>启用 TG 通知</span><input type="checkbox" id="set-tg-enabled" /><i></i></label>
+                  <label class="toggle-row"><span>自动收链（Inbox 自动建任务）</span><input type="checkbox" id="set-tg-inbox" /><i></i></label>
+                  <label class="toggle-row"><span>签到通知</span><input type="checkbox" id="set-tg-sign" /><i></i></label>
+                </div>
+                <div class="form-grid">
+                  <div class="fg full">
+                    <div class="fl">
+                      <label>Bot Token</label>
+                      <span class="meta" id="tg-token-hint">未配置</span>
+                    </div>
+                    <input id="set-tg-token" class="field mono" type="password" placeholder="留空不修改" />
+                  </div>
+                  <div class="fg">
+                    <label>User ID</label>
+                    <input id="set-tg-userid" class="field" placeholder="Telegram 用户/频道 ID" />
+                  </div>
+                  <div class="fg">
+                    <label>通知类型</label>
+                    <select id="set-push-notify-type" class="field">
+                      <option value="full">全部</option>
+                      <option value="success_only">仅成功</option>
+                      <option value="exclude_invalid">排除失效</option>
+                    </select>
+                  </div>
+                  <div class="fg">
+                    <label>TG API Host（可选）</label>
+                    <input id="set-tg-api-host" class="field" placeholder="默认 api.telegram.org" />
+                  </div>
+                  <div class="fg">
+                    <label>代理 Host</label>
+                    <input id="set-tg-proxy-host" class="field" placeholder="可选" />
+                  </div>
+                  <div class="fg">
+                    <label>代理 Port</label>
+                    <input id="set-tg-proxy-port" class="field" placeholder="可选" />
+                  </div>
+                  <div class="fg">
+                    <label>代理 Auth</label>
+                    <input id="set-tg-proxy-auth" class="field" placeholder="user:pass 可选" />
+                  </div>
+                  <div class="fg full">
+                    <label>自动收链根目录</label>
+                    <input id="set-tg-inbox-root" class="field" placeholder="例如 影视剧" />
+                    <div class="help">Telegram 自动收链建任务时的固定根目录。会生成 电影/片名、电视剧/剧名/Season 01 等规范路径。</div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="settings-sec" id="sec-source">
+                <div class="sec-title">
+                  <div>
+                    <h3>TG 频道搜索源</h3>
+                    <p>用于失效换源、资源搜索补链（QAS source.telegram）。</p>
+                  </div>
+                  <span class="badge-soft">Source</span>
+                </div>
+                <div class="toggle-list">
+                  <label class="toggle-row"><span>启用频道源</span><input type="checkbox" id="set-src-enabled" /><i></i></label>
+                  <label class="toggle-row"><span>失效自动换源</span><input type="checkbox" id="set-src-replace" /><i></i></label>
+                </div>
+                <div class="form-grid">
+                  <div class="fg full">
+                    <label>频道列表（逗号或换行）</label>
+                    <textarea id="set-src-channels" class="field mono" rows="4" placeholder="https://t.me/xxx, https://t.me/yyy"></textarea>
+                  </div>
+                  <div class="fg full">
+                    <label>关键词（可选，逗号分隔）</label>
+                    <input id="set-src-keywords" class="field" placeholder="可空" />
+                  </div>
+                  <div class="fg">
+                    <label>代理</label>
+                    <input id="set-src-proxy" class="field" placeholder="可选" />
+                  </div>
+                  <div class="fg">
+                    <label>read_limit</label>
+                    <input id="set-src-read" class="field" type="number" />
+                  </div>
+                  <div class="fg">
+                    <label>deep_limit</label>
+                    <input id="set-src-deep" class="field" type="number" />
+                  </div>
+                  <div class="fg">
+                    <label>verify_limit</label>
+                    <input id="set-src-verify" class="field" type="number" />
+                  </div>
+                </div>
+              </section>
+
+              
+              <section class="settings-sec" id="sec-mtproto">
+                <div class="sec-title">
+                  <div>
+                    <h3>TG MTProto 实时监控</h3>
+                    <p>Telethon 用户协议监听频道新消息；匹配「我的订阅」后自动写分享链并同步 QAS 任务。与 t.me 缓存搜链互补。</p>
+                  </div>
+                  <span class="badge-soft">MTProto</span>
+                </div>
+
+                <div class="panel" style="margin-bottom:16px;min-height:auto">
+                  <header>
+                    <h3>运行状态</h3>
+                    <div class="page-actions">
+                      <button class="btn soft" type="button" id="btn-mp-refresh">刷新</button>
+                      <button class="btn soft" type="button" id="btn-mp-start">启动</button>
+                      <button class="btn soft" type="button" id="btn-mp-stop">停止</button>
+                      <button class="btn primary" type="button" id="btn-mp-restart">重启</button>
+                    </div>
+                  </header>
+                  <div id="mp-status-rows" class="stack" style="padding:8px 12px 12px">
+                    <div class="empty">点击刷新查看状态</div>
+                  </div>
+                </div>
+
+                <div class="toggle-list">
+                  <label class="toggle-row"><span>启用 MTProto 实时监控</span><input type="checkbox" id="set-mp-enabled" /><i></i></label>
+                  <label class="toggle-row"><span>命中后自动写分享链</span><input type="checkbox" id="set-mp-auto-apply" checked /><i></i></label>
+                  <label class="toggle-row"><span>同步 QAS 转存任务</span><input type="checkbox" id="set-mp-qas" checked /><i></i></label>
+                  <label class="toggle-row"><span>覆盖已有分享链</span><input type="checkbox" id="set-mp-update" /><i></i></label>
+                </div>
+
+                <div class="form-grid">
+                  <div class="fg">
+                    <label>API ID</label>
+                    <input id="set-mp-api-id" class="field mono" placeholder="https://my.telegram.org 申请" />
+                  </div>
+                  <div class="fg">
+                    <div class="fl"><label>API Hash</label><span class="meta" id="mp-hash-hint">未配置</span></div>
+                    <input id="set-mp-api-hash" class="field mono" type="password" placeholder="留空不修改" />
+                  </div>
+                  <div class="fg">
+                    <label>手机号</label>
+                    <input id="set-mp-phone" class="field mono" placeholder="+86138xxxxxxxx" />
+                  </div>
+                  <div class="fg">
+                    <label>Session 路径</label>
+                    <input id="set-mp-session" class="field" placeholder="data/mtproto" />
+                  </div>
+                  <div class="fg full">
+                    <label>监控频道（留空则用「TG 频道源」列表）</label>
+                    <textarea id="set-mp-channels" class="field mono" rows="3" placeholder="https://t.me/mqte5&#10;Quark_Movies"></textarea>
+                  </div>
+                </div>
+
+                <div class="panel" style="margin-top:14px;min-height:auto">
+                  <header><h3>登录（首次必做）</h3><span class="badge-soft">Session</span></header>
+                  <div class="form-grid" style="padding:8px 12px 12px">
+                    <div class="fg">
+                      <label>验证码</label>
+                      <input id="set-mp-code" class="field mono" placeholder="Telegram App 收到的代码" />
+                    </div>
+                    <div class="fg">
+                      <label>二步验证密码（如有）</label>
+                      <input id="set-mp-password" class="field mono" type="password" placeholder="可选" />
+                    </div>
+                    <div class="fg full">
+                      <div class="page-actions">
+                        <button class="btn soft" type="button" id="btn-mp-send-code">发送验证码</button>
+                        <button class="btn primary" type="button" id="btn-mp-sign-in">确认登录</button>
+                        <button class="btn soft" type="button" id="btn-mp-logout">退出登录</button>
+                      </div>
+                      <div class="help" style="margin-top:8px">1. 填 API ID/Hash 与手机号并「保存全部设置」→ 2. 发送验证码 → 3. 填验证码确认登录 → 4. 启用并启动监控。</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="panel" style="margin-top:14px;min-height:auto">
+                  <header><h3>最近命中</h3></header>
+                  <div id="mp-hits" class="stack" style="padding:8px 12px 12px"><div class="empty">暂无命中</div></div>
+                </div>
+
+                <div class="page-actions" style="margin-top:12px">
+                  <button class="btn primary" type="button" id="btn-mp-save">保存 MTProto 配置</button>
+                </div>
+              </section>
+
+              <section class="settings-sec" id="sec-tmdb">
+                <div class="sec-title">
+                  <div>
+                    <h3>TMDB</h3>
+                    <p>刮削 / 日历 / 季集识别使用的 TMDB API Key（写在 QAS 配置）。</p>
+                  </div>
+                  <span class="badge-soft">TMDB</span>
+                </div>
+                <div class="form-grid">
+                  <div class="fg full">
+                    <div class="fl">
+                      <label>TMDB API 密钥</label>
+                      <span class="meta" id="tmdb-hint">未配置</span>
+                    </div>
+                    <input id="set-tmdb-key" class="field mono" type="password" placeholder="留空不修改" />
+                    <div class="help">在 https://www.themoviedb.org/settings/api 申请。</div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="settings-sec" id="sec-server">
+                <div class="sec-title">
+                  <div>
+                    <h3>302 播放服务</h3>
+                    <p>Emby / 播放器请求本服务后 302 到夸克 m3u8。</p>
+                  </div>
+                  <span class="badge-soft">Playback</span>
+                </div>
+                <div class="form-grid">
+                  <div class="fg">
+                    <label>监听 Host</label>
+                    <input id="set-host" class="field" placeholder="0.0.0.0" />
+                  </div>
+                  <div class="fg">
+                    <label>端口</label>
+                    <input id="set-port" class="field" type="number" min="1" max="65535" />
+                  </div>
+                  <div class="fg full">
+                    <label>public_base</label>
+                    <input id="set-public-base" class="field" placeholder="http://192.168.x.x:18025" />
+                    <div class="help">必须是 Emby / 客户端能访问到的地址。</div>
+                  </div>
+                  <div class="fg">
+                    <label>流水线间隔（秒）</label>
+                    <input id="set-interval" class="field" type="number" min="60" step="60" />
+                  </div>
+                </div>
+              </section>
+
+              <section class="settings-sec" id="sec-strm">
+                <div class="sec-title">
+                  <div>
+                    <h3>STRM 媒体库</h3>
+                    <p>生成的 .strm 输出位置，供 Emby 扫描。</p>
+                  </div>
+                  <span class="badge-soft">Library</span>
+                </div>
+                <div class="form-grid">
+                  <div class="fg full">
+                    <label>STRM 输出目录</label>
+                    <input id="set-strm-root" class="field" />
+                  </div>
+                  <div class="fg full">
+                    <label>视频扩展名</label>
+                    <input id="set-video-exts" class="field" placeholder=".mp4,.mkv,.ts,.mov" />
+                  </div>
+                </div>
+              </section>
+
+              <section class="settings-sec" id="sec-emby" data-enhanced="1">
+                <div class="sec-title">
+                  <div>
+                    <h3>Emby 集成</h3>
+                    <p>流水线结束后可选触发媒体库刷新。</p>
+                  </div>
+                  <span class="badge-soft">Emby</span>
+                </div>
+                <div class="toggle-list">
+                  <div class="page-actions" style="margin-bottom:12px">
+                  <button class="btn soft" type="button" id="btn-emby-folders">拉取媒体库</button>
+                  <button class="btn primary" type="button" id="btn-emby-refresh">立即刷库</button>
+                </div>
+                <div id="emby-folders-box" class="help" style="margin-bottom:12px">点击「拉取媒体库」查看 VirtualFolders</div>
+                <label class="toggle-row"><span>启用 Emby 刷库</span><input type="checkbox" id="set-emby-enabled" /><i></i></label>
+                </div>
+                <div class="form-grid">
+                  <div class="fg full">
+                    <label>Emby 地址</label>
+                    <input id="set-emby-url" class="field" placeholder="http://192.168.10.14:8096" />
+                  </div>
+                  <div class="fg full">
+                    <div class="fl">
+                      <label>API Key</label>
+                      <span class="meta" id="emby-key-hint">未配置</span>
+                    </div>
+                    <input id="set-emby-key" class="field" type="password" placeholder="留空不修改" />
+                  </div>
+                  <div class="fg full">
+                    <label>路径提示（可选）</label>
+                    <input id="set-emby-path" class="field" />
+                  </div>
+                </div>
+              </section>
+
+              <section class="settings-sec" id="sec-file">
+                <div class="sec-title">
+                  <div>
+                    <h3>配置文件</h3>
+                    <p>当前写入目标与脱敏预览。</p>
+                  </div>
+                </div>
+                <div class="form-grid">
+                  <div class="fg full">
+                    <label>config.yaml 路径</label>
+                    <input id="set-config-path" class="field" readonly />
+                  </div>
+                </div>
+                <div class="help" style="margin:10px 0 12px">端口 / Host 变更需重启服务；Cookie、m_url、Emby、路径等可热更新。</div>
+                <pre class="code" id="settings-preview">{}</pre>
+              </section>
+            </form>
+          </div>
+        </section>
+
+        <!-- LOGS -->
+        <section class="page" id="page-logs">
+          <div class="page-head">
+            <div>
+              <h2>运行日志</h2>
+              <p>内存日志，重启后清空。</p>
+            </div>
+            <button class="btn soft" id="btn-clear-logs" type="button">清空</button>
+          </div>
+          <article class="panel">
+            <pre class="code tall" id="logs-view">暂无日志</pre>
+          </article>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  
+  <div class="modal" id="sub-modal" hidden>
+    <div class="modal-card">
+      <div class="modal-h">
+        <div>
+          <h3 id="sub-modal-title">新建订阅</h3>
+          <p id="sub-modal-sub">写入 config.yaml subscriptions</p>
+        </div>
+        <button class="btn soft" type="button" id="sub-modal-close">关闭</button>
+      </div>
+      <form class="modal-body" id="sub-form">
+        <input type="hidden" id="sub-id" />
+        <div class="form-grid">
+          <div class="fg">
+            <label>名称</label>
+            <input id="sub-name" class="field" required placeholder="剧名/电影名" />
+          </div>
+          <div class="fg">
+            <label>类型</label>
+            <select id="sub-type" class="field">
+              <option value="tv">剧集 tv</option>
+              <option value="movie">电影 movie</option>
+              <option value="anime">动漫 anime</option>
+              <option value="variety">综艺 variety</option>
+            </select>
+          </div>
+          <div class="fg full">
+            <label>保存路径（夸克目录）</label>
+            <input id="sub-savepath" class="field" placeholder="电视剧/某剧/Season 01" />
+          </div>
+          <div class="fg full">
+            <label>分享链接（可选，有则 once 可转存）</label>
+            <input id="sub-shareurl" class="field" placeholder="https://pan.quark.cn/s/..." />
+          </div>
+          <div class="fg">
+            <label>TMDB ID</label>
+            <input id="sub-tmdb" class="field" placeholder="可选" />
+          </div>
+          <div class="fg">
+            <label>STRM 子目录</label>
+            <input id="sub-strm" class="field" placeholder="默认取路径第一段" />
+          </div>
+          <div class="fg full">
+            <label>关键词（逗号分隔）</label>
+            <input id="sub-keywords" class="field" placeholder="剧名,别名" />
+          </div>
+          <div class="fg full">
+            <label>来源</label>
+            <input id="sub-sources" class="field" placeholder="telegram,qas" value="telegram,qas" />
+          </div>
+          <div class="fg">
+            <label class="toggle-row" style="padding:10px"><span>启用</span><input type="checkbox" id="sub-enabled" checked /><i></i></label>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn soft" type="button" id="sub-cancel">取消</button>
+          <button class="btn primary" type="submit" id="sub-save">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  
+  <div class="modal" id="sub-search-modal" hidden>
+    <div class="modal-card" style="width:min(860px,100%)">
+      <div class="modal-h">
+        <div>
+          <h3 id="sub-search-title">搜链结果</h3>
+          <p id="sub-search-sub">选择一条夸克分享链应用到订阅</p>
+        </div>
+        <button class="btn soft" type="button" id="sub-search-close">关闭</button>
+      </div>
+      <div class="modal-body">
+        <div id="sub-search-body" class="stack"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <div class="scrim" id="scrim" hidden></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+# Quark Media — Docker 默认配置
+# 挂载：./config -> /app/config  ./data -> /app/data  ./strm -> /app/strm
+
+cookie: ""
+m_url: ""
+# 可选：从 OpenList 读 cookie（容器内路径）
+openlist_db: ""
+m_url_file: ""
+
+# 内置转存引擎（已 vendor，无需外挂 quark-auto-save-x）
+use_qas_transfer: true
+qas_root: /app/third_party/quark-auto-save-x
+qas_config: /app/data/quark_config.json
+import_qas_tasks: true
+qas_write_back: false
+
+server:
+  host: 0.0.0.0
+  port: 18025
+  # 改成 Emby/客户端能访问的地址
+  public_base: http://192.168.10.14:18025
+
+strm_root: /app/strm
+video_exts: [.mp4, .mkv, .ts, .mov, .m4v, .avi, .webm, .flv]
+
+emby:
+  enabled: false
+  base_url: http://192.168.10.14:8096
+  api_key: ""
+  path: ""
+
+interval_seconds: 1800
+tasks: []
+accounts: []
+subscriptions: []
+
+category_file: /app/data/category.yaml
+
+# 整理分类（organizer 风格）
+organize:
+  auto_organize: true
+  scrape_enabled: false
+  enable_category: true
+  category_file: /app/data/category.yaml
+  naming_template:
+    movie: "{{title}} ({{year}})/{{title}} ({{year}}) - {{resolution}}{{videoCodec}}{{audioCodec}}{{ext}}"
+    tv_show_dir: "{{title}} ({{year}})"
+    tv_season_dir: "Season {{seasonPad}}"
+    tv_file: "{{title}} - S{{seasonPad}}E{{episodePad}} - {{resolution}}{{videoCodec}}{{audioCodec}}{{ext}}"
+    tv_combo: "{{title}} ({{year}})/Season {{seasonPad}}/{{title}} - S{{seasonPad}}E{{episodePad}} - {{resolution}}{{videoCodec}}{{audioCodec}}{{ext}}"
+    enable_category: true
+
+subscription_search:
+  enabled: true
+  only_missing_share: true
+  apply_best: true
+
+# Telegram MTProto 实时监控
+mtproto:
+  enabled: false
+  api_id: ""
+  api_hash: ""
+  phone: ""
+  session_path: /app/data/mtproto
+  channels: []
+  auto_apply: true
+  also_qas_task: true
+  update_existing_share: false

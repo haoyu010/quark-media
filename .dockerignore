@@ -1,0 +1,13 @@
+bin
+*.exe
+.env
+.git
+data
+strm
+config/config.yaml
+app
+main.py
+requirements.txt
+_parts
+**/.venv
+**/__pycache__

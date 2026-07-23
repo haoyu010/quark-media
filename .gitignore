@@ -1,0 +1,24 @@
+# build
+bin/
+*.exe
+_parts/
+_mk.py
+_ws.py
+*.log
+
+# secrets / runtime
+.env
+config.yaml
+config/config.yaml
+data/*
+!data/.gitkeep
+strm/*
+!strm/.gitkeep
+*.session
+**/__pycache__/
+*.pyc
+third_party/quark-auto-save-x/config/
+third_party/quark-auto-save-x/**/__pycache__/
+
+# optional local
+.venv/

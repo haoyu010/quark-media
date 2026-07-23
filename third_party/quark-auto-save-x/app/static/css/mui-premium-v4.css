@@ -1,0 +1,340 @@
+/* --------------- MUI Premium Layer v4 --------------- */
+:root {
+  --qasx-premium-ink: #0b1120;
+  --qasx-premium-border: rgba(79, 70, 229, 0.12);
+  --qasx-premium-border-strong: rgba(79, 70, 229, 0.20);
+  --qasx-premium-glow: rgba(99, 102, 241, 0.12);
+  --qasx-premium-glow-strong: rgba(79, 70, 229, 0.18);
+  --qasx-premium-shadow-1: inset 0 1px 0 rgba(255, 255, 255, 0.76), 0 8px 18px rgba(15, 23, 42, 0.06);
+  --qasx-premium-shadow-2: inset 0 1px 0 rgba(255, 255, 255, 0.82), 0 14px 34px rgba(15, 23, 42, 0.08);
+  --qasx-premium-shadow-3: inset 0 1px 0 rgba(255, 255, 255, 0.84), 0 18px 42px rgba(15, 23, 42, 0.10);
+  --qasx-premium-shadow-4: inset 0 1px 0 rgba(255, 255, 255, 0.88), 0 28px 72px rgba(15, 23, 42, 0.14);
+  --qasx-premium-radius-1: 16px;
+  --qasx-premium-radius-2: 20px;
+  --qasx-premium-radius-3: 26px;
+  --qasx-premium-radius-4: 30px;
+}
+
+html,
+body:not(.login-page) {
+  background:
+    radial-gradient(circle at 12% -6%, rgba(79, 70, 229, 0.16), transparent 32%),
+    radial-gradient(circle at 92% 4%, rgba(234, 88, 12, 0.08), transparent 28%),
+    linear-gradient(180deg, #fafaff 0%, #f5f7fb 45%, #eef2ff 100%) fixed !important;
+}
+
+body:not(.login-page) {
+  position: relative;
+  color: var(--qasx-premium-ink) !important;
+}
+
+body:not(.login-page)::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 22%),
+    radial-gradient(circle at 50% -10%, rgba(255, 255, 255, 0.58), transparent 34%);
+  opacity: 0.42;
+}
+
+.navbar.navbar-dark.bg-dark {
+  backdrop-filter: blur(12px) saturate(1.12);
+  -webkit-backdrop-filter: blur(12px) saturate(1.12);
+  border-bottom: 1px solid rgba(199, 210, 254, 0.16) !important;
+  box-shadow: var(--qasx-premium-shadow-4) !important;
+}
+
+.sidebar.bg-light,
+.sidebar {
+  box-shadow:
+    inset -1px 0 0 rgba(255, 255, 255, 0.04),
+    var(--qasx-premium-shadow-4) !important;
+}
+
+.sidebar .nav-link {
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  background: rgba(255, 255, 255, 0.015) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+.sidebar .nav-link:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(199, 210, 254, 0.14) !important;
+}
+
+.sidebar .nav-link.active {
+  background:
+    linear-gradient(135deg, #4f46e5 0%, #5b5cf0 52%, #4338ca 100%) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 18px 36px rgba(79, 70, 229, 0.32) !important;
+}
+
+.tasklist-workbench-page .task-dashboard-hero,
+.discovery-page-shell .discovery-hero-panel {
+  border-color: var(--qasx-premium-border) !important;
+  border-radius: var(--qasx-premium-radius-4) !important;
+  background:
+    radial-gradient(circle at 90% 18%, rgba(79, 70, 229, 0.16), transparent 30%),
+    radial-gradient(circle at 12% 88%, rgba(234, 88, 12, 0.06), transparent 32%),
+    linear-gradient(135deg, #ffffff 0%, #fbfbff 48%, #f4f3ff 100%) !important;
+  box-shadow: var(--qasx-premium-shadow-4) !important;
+}
+
+.tasklist-workbench-page .task-dashboard-hero::after,
+.discovery-page-shell .discovery-hero-panel::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(79, 70, 229, 0.22), transparent);
+  pointer-events: none;
+}
+
+.tasklist-workbench-page .task-dashboard-metric,
+.tasklist-workbench-page .task,
+.discovery-page-shell .discovery-card,
+.config-workbench-page .row.title,
+.config-workbench-page .form-group.row,
+.config-workbench-page .row.mb-2,
+.notify-panel,
+.source-panel,
+.calendar-task-card,
+.runlog-content,
+.table-responsive,
+.modal-content {
+  border-color: rgba(79, 70, 229, 0.10) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(249, 250, 255, 0.94)) !important;
+  box-shadow: var(--qasx-premium-shadow-2) !important;
+}
+
+.tasklist-workbench-page .task-dashboard-metric {
+  border-radius: var(--qasx-premium-radius-2) !important;
+}
+
+.tasklist-workbench-page .task:hover,
+.discovery-page-shell .discovery-card:hover,
+.calendar-task-card:hover {
+  border-color: rgba(79, 70, 229, 0.22) !important;
+  box-shadow: var(--qasx-premium-shadow-4) !important;
+}
+
+.tasklist-workbench-page .task-dashboard-metric::before,
+.tasklist-workbench-page .task::before,
+.discovery-page-shell .discovery-card::before,
+.config-workbench-page .row.title::before,
+.config-workbench-page .form-group.row::before,
+.modal-content::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.36), transparent 22%),
+    radial-gradient(circle at 16% 8%, rgba(255, 255, 255, 0.72), transparent 18%);
+  opacity: 0.42;
+}
+
+.tasklist-workbench-page .task-dashboard-metric,
+.tasklist-workbench-page .task,
+.discovery-page-shell .discovery-card,
+.config-workbench-page .row.title,
+.config-workbench-page .form-group.row,
+.config-workbench-page .row.mb-2,
+.modal-content {
+  position: relative;
+  overflow: hidden;
+}
+
+.tasklist-workbench-page .task-dashboard-eyebrow,
+.task-dashboard-eyebrow,
+.discovery-page-shell .discovery-kicker {
+  border-color: var(--qasx-premium-border) !important;
+  background:
+    linear-gradient(135deg, rgba(224, 231, 255, 0.92), rgba(255, 255, 255, 0.96)) !important;
+  color: #4338ca !important;
+  box-shadow: var(--qasx-premium-shadow-1) !important;
+}
+
+.tasklist-workbench-page .task-dashboard-copy h1,
+.discovery-page-shell .discovery-hero-copy h2 {
+  background: linear-gradient(135deg, #111827 0%, #312e81 52%, #4f46e5 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+}
+
+.tasklist-workbench-page .task-dashboard-metric strong {
+  color: #4338ca !important;
+}
+
+.tasklist-workbench-page .task-dashboard-metric .metric-label,
+.tasklist-workbench-page .task-dashboard-copy p,
+.discovery-page-shell .discovery-section-subtitle,
+.discovery-page-shell .discovery-meta,
+.discovery-page-shell .discovery-card-meta {
+  color: #5b6475 !important;
+}
+
+.btn,
+button.btn,
+.calendar-category-btn,
+.filter-btn-square,
+.tasklist-count-indicator,
+.discovery-page-shell .discovery-btn,
+.discovery-page-shell .discovery-search-types button,
+.notify-primary-btn,
+.notify-secondary-btn,
+.icon-btn {
+  border-radius: var(--qasx-premium-radius-1) !important;
+  box-shadow: var(--qasx-premium-shadow-1) !important;
+}
+
+.btn-primary,
+.calendar-category-btn.active,
+.tasklist-type-filter .calendar-category-btn.active,
+.discovery-page-shell .discovery-btn.active,
+.discovery-page-shell .discovery-search-types button.active,
+.notify-primary-btn {
+  background:
+    linear-gradient(135deg, #4f46e5 0%, #5b5cf0 52%, #4338ca 100%) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 14px 28px rgba(79, 70, 229, 0.28) !important;
+}
+
+.btn-outline-primary,
+.discovery-page-shell .discovery-refresh-btn {
+  border-color: rgba(79, 70, 229, 0.22) !important;
+  background:
+    linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%) !important;
+  color: #4338ca !important;
+}
+
+.btn-outline-secondary,
+.btn-outline-success,
+.btn-outline-danger,
+.btn-warning,
+.filter-btn-square,
+.tasklist-count-indicator,
+.notify-secondary-btn,
+.discovery-page-shell .discovery-btn:not(.active),
+.discovery-page-shell .discovery-search-types button:not(.active) {
+  background:
+    linear-gradient(180deg, #ffffff 0%, #fbfbff 100%) !important;
+}
+
+.form-control,
+select.form-control,
+textarea.form-control,
+.custom-select,
+.input-group-text {
+  border-color: rgba(79, 70, 229, 0.12) !important;
+  background:
+    linear-gradient(180deg, #ffffff 0%, #fafbff 100%) !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+.form-control:focus,
+select.form-control:focus,
+textarea.form-control:focus,
+.custom-select:focus {
+  box-shadow:
+    0 0 0 4px rgba(79, 70, 229, 0.12),
+    inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+.input-group-text {
+  color: #312e81 !important;
+}
+
+.discovery-page-shell .discovery-search-box {
+  border-color: rgba(79, 70, 229, 0.12) !important;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfbff 100%) !important;
+  box-shadow: var(--qasx-premium-shadow-1) !important;
+}
+
+.discovery-page-shell .discovery-poster,
+.tasklist-poster-mode .discovery-poster {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.74),
+    0 16px 32px rgba(15, 23, 42, 0.10) !important;
+}
+
+.table thead th,
+main .table thead th {
+  background:
+    linear-gradient(180deg, #fbfbff 0%, #f4f3ff 100%) !important;
+  color: #1f2937 !important;
+}
+
+.table tbody tr:hover,
+.runlog-content .runlog-line:hover {
+  background: rgba(79, 70, 229, 0.05) !important;
+}
+
+.toast-custom,
+.dropdown-menu,
+.popover,
+.v-jsoneditor,
+.jsoneditor {
+  box-shadow: var(--qasx-premium-shadow-3) !important;
+}
+
+@media (min-width: 768px) {
+  .navbar.navbar-dark.bg-dark {
+    border-radius: 0 0 28px 28px !important;
+  }
+
+  .sidebar.bg-light,
+  .sidebar {
+    border-radius: 0 0 28px 28px !important;
+  }
+
+  .tasklist-workbench-page .task-dashboard-hero,
+  .discovery-page-shell .discovery-hero-panel {
+    border-radius: 34px !important;
+  }
+
+  .tasklist-workbench-page .task,
+  .discovery-page-shell .discovery-card,
+  .config-workbench-page .row.title,
+  .config-workbench-page .form-group.row {
+    border-radius: 24px !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .navbar.navbar-dark.bg-dark,
+  body:has(.tasklist-workbench-page) .navbar.navbar-dark.bg-dark {
+    backdrop-filter: blur(8px) saturate(1.12);
+    -webkit-backdrop-filter: blur(8px) saturate(1.12);
+  }
+
+  .tasklist-workbench-page .task-dashboard-hero,
+  .discovery-page-shell .discovery-hero-panel,
+  .tasklist-workbench-page .task,
+  .discovery-page-shell .discovery-card,
+  .config-workbench-page .row.title,
+  .config-workbench-page .form-group.row,
+  .table-responsive,
+  .runlog-content,
+  .modal-content {
+    border-radius: 18px !important;
+    box-shadow: var(--qasx-premium-shadow-1) !important;
+  }
+
+  .tasklist-type-filter,
+  .discovery-page-shell .discovery-search-types,
+  .discovery-page-shell .discovery-main-buttons,
+  .discovery-page-shell .discovery-sub-buttons,
+  .tasklist-sort-controls {
+    overscroll-behavior-x: contain;
+  }
+}

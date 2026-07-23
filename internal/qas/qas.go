@@ -1,0 +1,199 @@
+package qas
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+type Extras struct {
+	TMDBAPIKey     string
+	PushNotifyType string
+	PushConfig     map[string]any
+	TelegramSource map[string]any
+	TaskSettings   map[string]any
+	Cookies        []string
+}
+
+func LoadExtras(path string) Extras {
+	ex := Extras{
+		PushNotifyType: "full",
+		PushConfig:     map[string]any{},
+		TelegramSource: map[string]any{},
+		TaskSettings:   map[string]any{},
+	}
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return ex
+	}
+	var raw map[string]any
+	if json.Unmarshal(b, &raw) != nil {
+		return ex
+	}
+	if v, ok := raw["tmdb_api_key"].(string); ok {
+		ex.TMDBAPIKey = v
+	}
+	if v, ok := raw["push_notify_type"].(string); ok {
+		ex.PushNotifyType = v
+	}
+	if v, ok := raw["push_config"].(map[string]any); ok {
+		ex.PushConfig = v
+	}
+	if v, ok := raw["telegram_source"].(map[string]any); ok {
+		ex.TelegramSource = v
+	}
+	if v, ok := raw["task_settings"].(map[string]any); ok {
+		ex.TaskSettings = v
+	}
+	switch v := raw["cookie"].(type) {
+	case string:
+		if strings.TrimSpace(v) != "" {
+			ex.Cookies = []string{v}
+		}
+	case []any:
+		for _, x := range v {
+			if s, ok := x.(string); ok && strings.TrimSpace(s) != "" {
+				ex.Cookies = append(ex.Cookies, s)
+			}
+		}
+	}
+	return ex
+}
+
+func SaveExtrasMerge(path string, patch map[string]any) (Extras, error) {
+	raw := map[string]any{}
+	if b, err := os.ReadFile(path); err == nil {
+		_ = json.Unmarshal(b, &raw)
+	}
+	for k, v := range patch {
+		if v == nil {
+			continue
+		}
+		if nm, ok := v.(map[string]any); ok {
+			old, _ := raw[k].(map[string]any)
+			if old == nil {
+				old = map[string]any{}
+			}
+			for kk, vv := range nm {
+				if ss, ok := vv.(string); ok && ss == "" {
+					continue
+				}
+				old[kk] = vv
+			}
+			raw[k] = old
+			continue
+		}
+		if ss, ok := v.(string); ok && ss == "" && k == "tmdb_api_key" {
+			continue
+		}
+		raw[k] = v
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return Extras{}, err
+	}
+	b, err := json.MarshalIndent(raw, "", "  ")
+	if err != nil {
+		return Extras{}, err
+	}
+	if err := os.WriteFile(path, b, 0o644); err != nil {
+		return Extras{}, err
+	}
+	return LoadExtras(path), nil
+}
+
+func ListTasks(path string) []map[string]any {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	var raw map[string]any
+	if json.Unmarshal(b, &raw) != nil {
+		return nil
+	}
+	var arr []any
+	switch v := raw["tasklist"].(type) {
+	case []any:
+		arr = v
+	case map[string]any:
+		for name, item := range v {
+			m, _ := item.(map[string]any)
+			if m == nil {
+				m = map[string]any{}
+			}
+			m2 := map[string]any{}
+			for k, vv := range m {
+				m2[k] = vv
+			}
+			if _, ok := m2["name"]; !ok {
+				m2["name"] = name
+			}
+			arr = append(arr, m2)
+		}
+	}
+	out := make([]map[string]any, 0, len(arr))
+	for _, it := range arr {
+		m, _ := it.(map[string]any)
+		if m == nil {
+			continue
+		}
+		name := asStr(m["taskname"])
+		if name == "" {
+			name = asStr(m["name"])
+		}
+		save := asStr(m["savepath"])
+		if save == "" {
+			save = asStr(m["save_path"])
+		}
+		share := asStr(m["shareurl"])
+		if share == "" {
+			share = asStr(m["share_url"])
+		}
+		out = append(out, map[string]any{
+			"name":        name,
+			"save_path":   save,
+			"quark_path":  save,
+			"share_url":   share,
+			"passcode":    asStr(m["passcode"]),
+			"strm_subdir": asStr(m["strm_subdir"]),
+			"enabled":     m["enabled"] != false,
+			"do_save":     share != "",
+			"source":      "qas",
+		})
+	}
+	return out
+}
+
+func asStr(v any) string {
+	if v == nil {
+		return ""
+	}
+	s := strings.TrimSpace(fmt.Sprint(v))
+	if s == "<nil>" {
+		return ""
+	}
+	return s
+}
+
+func PublicExtras(ex Extras) map[string]any {
+	pc := map[string]any{}
+	for k, v := range ex.PushConfig {
+		pc[k] = v
+	}
+	if tok, ok := pc["TG_BOT_TOKEN"].(string); ok && tok != "" {
+		pc["TG_BOT_TOKEN"] = ""
+		pc["TG_BOT_TOKEN_SET"] = true
+	} else {
+		pc["TG_BOT_TOKEN_SET"] = false
+	}
+	return map[string]any{
+		"tmdb_api_key":     "",
+		"tmdb_set":         ex.TMDBAPIKey != "",
+		"push_notify_type": ex.PushNotifyType,
+		"push_config":      pc,
+		"telegram_source":  ex.TelegramSource,
+		"task_settings":    ex.TaskSettings,
+		"cookies_count":    len(ex.Cookies),
+	}
+}

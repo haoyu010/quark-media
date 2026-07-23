@@ -1,0 +1,1396 @@
+/* Quark Workbench Rebuild v1: single-piece product UI */
+:root {
+  --qx-bg: #eaf0f8;
+  --qx-canvas: #f8fbff;
+  --qx-surface: rgba(255, 255, 255, 0.86);
+  --qx-surface-strong: #ffffff;
+  --qx-ink: #101828;
+  --qx-muted: #657083;
+  --qx-soft: #eef3fb;
+  --qx-line: rgba(130, 148, 177, 0.22);
+  --qx-line-strong: rgba(85, 107, 145, 0.24);
+  --qx-primary: #2f63e8;
+  --qx-primary-2: #12a0b5;
+  --qx-danger: #ef4444;
+  --qx-success: #16a34a;
+  --qx-radius-xl: 30px;
+  --qx-radius-lg: 22px;
+  --qx-radius-md: 16px;
+  --qx-shadow: 0 24px 80px rgba(29, 44, 73, 0.16);
+  --qx-shadow-soft: 0 14px 34px rgba(29, 44, 73, 0.08);
+  --qx-focus-ring: 0 0 0 3px rgba(47, 99, 232, .18);
+  --qx-sidebar: 272px;
+  --qx-task-wall-max: 1420px;
+  --qx-task-card-min: 420px;
+  --qx-ease: cubic-bezier(.2, .8, .2, 1);
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--qx-bg) !important;
+}
+
+body {
+  color: var(--qx-ink) !important;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  letter-spacing: 0 !important;
+}
+
+html body #app.qx-reborn-active > nav.navbar,
+html body #app.qx-reborn-active #sidebarMenu,
+html body #app.qx-reborn-active #sidebarMenu.sidebar,
+html body #app.qx-reborn-active #sidebarMenu.collapse,
+html body #app.qx-reborn-active #sidebarMenu.collapse.show {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+html body #app.qx-reborn-active > .container-fluid,
+html body #app.qx-reborn-active > .container-fluid > .row {
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 100dvh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+}
+
+html body #app.qx-reborn-active main,
+html body #app.qx-reborn-active main.col-md-9,
+html body #app.qx-reborn-active main.col-md-10,
+html body #app.qx-reborn-active main[role="main"] {
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 100dvh !important;
+  flex: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+html body #app.qx-reborn-active main > form {
+  min-height: 100dvh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+html body #app.qx-reborn-active main > form > .qx-reborn-app ~ div:not(.modal) {
+  display: none !important;
+}
+
+.qx-reborn-app,
+.qx-reborn-app * {
+  box-sizing: border-box !important;
+}
+
+/* Product Design polish v2: compact density, calmer actions, clearer focus */
+.qx-reborn-app :is(button, a, input, select, textarea):focus-visible {
+  outline: none !important;
+  box-shadow: var(--qx-focus-ring) !important;
+}
+
+.qx-reborn-app {
+  width: calc(100vw - 36px) !important;
+  min-height: calc(100dvh - 36px) !important;
+  margin: 18px !important;
+  display: grid !important;
+  grid-template-columns: var(--qx-sidebar) minmax(0, 1fr) !important;
+  overflow: hidden !important;
+  color: var(--qx-ink) !important;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,.84) 0 var(--qx-sidebar), rgba(247,250,255,.88) var(--qx-sidebar) 100%),
+    var(--qx-canvas) !important;
+  border: 1px solid rgba(255,255,255,.88) !important;
+  border-radius: var(--qx-radius-xl) !important;
+  box-shadow: var(--qx-shadow) !important;
+}
+
+.qx-reborn-sidebar {
+  min-width: 0 !important;
+  min-height: calc(100dvh - 36px) !important;
+  padding: 22px 18px !important;
+  display: grid !important;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto !important;
+  gap: 16px !important;
+  background: transparent !important;
+  border-right: 1px solid var(--qx-line) !important;
+}
+
+.qx-reborn-brand {
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: 48px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 10px !important;
+  border-radius: 20px !important;
+  background: rgba(255,255,255,.64) !important;
+  border: 1px solid rgba(255,255,255,.82) !important;
+}
+
+.qx-reborn-brand > span {
+  width: 48px !important;
+  height: 48px !important;
+  display: grid !important;
+  place-items: center !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, var(--qx-primary), #6a7df5) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 12px 22px rgba(47, 99, 232, .28) !important;
+}
+
+.qx-reborn-brand strong {
+  min-width: 0 !important;
+  display: block !important;
+  overflow: hidden !important;
+  color: var(--qx-ink) !important;
+  font-size: .98rem !important;
+  font-weight: 820 !important;
+  line-height: 1.2 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.qx-reborn-brand small {
+  display: block !important;
+  margin-top: 4px !important;
+  color: var(--qx-muted) !important;
+  font-size: .78rem !important;
+  font-weight: 650 !important;
+}
+
+.qx-reborn-nav {
+  min-width: 0 !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 8px !important;
+  overflow: auto !important;
+  padding-right: 2px !important;
+}
+
+.qx-reborn-nav button,
+.qx-reborn-settings-nav button,
+.qx-reborn-top-actions button,
+.qx-reborn-filterbar button,
+.qx-reborn-card-actions button,
+.qx-reborn-media-card button,
+.qx-reborn-inline-field button {
+  min-height: 42px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  color: var(--qx-ink) !important;
+  background: rgba(255,255,255,.72) !important;
+  border: 1px solid var(--qx-line) !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  font-weight: 760 !important;
+  letter-spacing: 0 !important;
+  transition: background .18s var(--qx-ease), border-color .18s var(--qx-ease), box-shadow .18s var(--qx-ease), transform .18s var(--qx-ease) !important;
+}
+
+.qx-reborn-nav button {
+  justify-content: flex-start !important;
+  width: 100% !important;
+  padding: 0 14px !important;
+  color: #253044 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.qx-reborn-nav button i,
+.qx-reborn-settings-nav button i {
+  width: 22px !important;
+  color: #64748b !important;
+  font-size: 1rem !important;
+}
+
+.qx-reborn-nav button:hover,
+.qx-reborn-settings-nav button:hover,
+.qx-reborn-top-actions button:hover,
+.qx-reborn-filterbar button:hover,
+.qx-reborn-card-actions button:hover,
+.qx-reborn-inline-field button:hover {
+  transform: translateY(-1px) !important;
+  background: rgba(255,255,255,.96) !important;
+  border-color: var(--qx-line-strong) !important;
+  box-shadow: 0 10px 26px rgba(35, 48, 72, .08) !important;
+}
+
+.qx-reborn-nav button.active,
+.qx-reborn-settings-nav button.active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, var(--qx-primary), #5e7af0) !important;
+  border-color: transparent !important;
+  box-shadow: 0 14px 28px rgba(47, 99, 232, .26) !important;
+}
+
+.qx-reborn-nav button.active i,
+.qx-reborn-settings-nav button.active i {
+  color: #ffffff !important;
+}
+
+.qx-reborn-logout {
+  min-height: 44px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 0 14px !important;
+  color: var(--qx-muted) !important;
+  text-decoration: none !important;
+  border-radius: 14px !important;
+}
+
+.qx-reborn-sidebar-section {
+  min-width: 0 !important;
+  padding: 16px 0 14px !important;
+  display: grid !important;
+  gap: 7px !important;
+  background: transparent !important;
+  border-top: 1px solid var(--qx-line) !important;
+  border-bottom: 1px solid var(--qx-line) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.qx-reborn-sidebar-section-title {
+  min-height: 34px !important;
+  margin: 0 0 2px !important;
+  padding: 0 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  color: #4b5f7f !important;
+  font-size: .9rem !important;
+  font-weight: 780 !important;
+}
+
+.qx-reborn-sidebar-section-title i {
+  color: #8b99b0 !important;
+  font-size: .8rem !important;
+}
+
+.qx-reborn-sidebar-section button {
+  min-height: 42px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 11px !important;
+  padding: 0 10px !important;
+  color: #5c6c84 !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 11px !important;
+  font-size: .88rem !important;
+  font-weight: 760 !important;
+  cursor: pointer !important;
+  transition: background .18s var(--qx-ease), color .18s var(--qx-ease), transform .18s var(--qx-ease) !important;
+}
+
+.qx-reborn-sidebar-section button:hover {
+  transform: translateY(-1px) !important;
+  color: #1f3f79 !important;
+  background: rgba(47, 99, 232, .06) !important;
+  border-color: rgba(47, 99, 232, .1) !important;
+}
+
+.qx-reborn-sidebar-section button.active {
+  color: var(--qx-primary) !important;
+  background: rgba(47, 99, 232, .1) !important;
+  border-color: rgba(47, 99, 232, .14) !important;
+}
+
+.qx-reborn-sidebar-section button i {
+  width: 18px !important;
+  color: currentColor !important;
+  font-size: .94rem !important;
+}
+
+.qx-reborn-sidebar-status {
+  min-width: 0 !important;
+  padding: 16px !important;
+  display: grid !important;
+  grid-template-columns: 16px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 12px !important;
+  background: rgba(255,255,255,0.92) !important;
+  border: 1px solid rgba(255,255,255,.95) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 18px 38px rgba(31, 45, 74, .08) !important;
+  align-self: end !important;
+}
+
+.qx-reborn-sidebar-status > span {
+  width: 16px !important;
+  height: 16px !important;
+  display: grid !important;
+  place-items: center !important;
+  color: #22c55e !important;
+  background: rgba(34, 197, 94, .14) !important;
+  border-radius: 999px !important;
+}
+
+.qx-reborn-sidebar-status > span i {
+  font-size: .58rem !important;
+}
+
+.qx-reborn-sidebar-status strong,
+.qx-reborn-sidebar-status small {
+  display: block !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.qx-reborn-sidebar-status strong {
+  color: var(--qx-ink) !important;
+  font-size: .9rem !important;
+  font-weight: 840 !important;
+}
+
+.qx-reborn-sidebar-status small {
+  margin-top: 3px !important;
+  color: #7a879a !important;
+  font-size: .74rem !important;
+  font-weight: 680 !important;
+}
+
+.qx-reborn-sidebar-status .qx-reborn-status-version {
+  margin-top: 16px !important;
+  color: #9aa7b8 !important;
+}
+
+.qx-reborn-main {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: calc(100dvh - 36px) !important;
+  margin: 0 !important;
+  padding: 22px !important;
+  overflow: auto !important;
+  background: transparent !important;
+}
+
+.qx-reborn-topbar {
+  min-height: 96px !important;
+  margin: 0 0 18px !important;
+  padding: 18px 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  background: rgba(255,255,255,.74) !important;
+  border: 1px solid rgba(255,255,255,.88) !important;
+  border-radius: 24px !important;
+  box-shadow: var(--qx-shadow-soft) !important;
+}
+
+.qx-reborn-kicker {
+  display: block !important;
+  margin-bottom: 4px !important;
+  color: var(--qx-primary) !important;
+  font-size: .78rem !important;
+  font-weight: 820 !important;
+}
+
+.qx-reborn-topbar h1 {
+  margin: 0 !important;
+  color: var(--qx-ink) !important;
+  font-size: clamp(1.45rem, 1.6vw, 2rem) !important;
+  line-height: 1.18 !important;
+  font-weight: 860 !important;
+  text-wrap: balance !important;
+}
+
+.qx-reborn-topbar p {
+  max-width: 56ch !important;
+  margin: 7px 0 0 !important;
+  color: var(--qx-muted) !important;
+  font-size: .92rem !important;
+  line-height: 1.5 !important;
+}
+
+.qx-reborn-top-actions,
+.qx-reborn-filterbar,
+.qx-reborn-card-actions {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+}
+
+.qx-reborn-header-search {
+  min-width: min(34vw, 380px) !important;
+  min-height: 44px !important;
+  display: grid !important;
+  grid-template-columns: 18px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 0 14px !important;
+  color: #64748b !important;
+  background: rgba(255,255,255,.82) !important;
+  border: 1px solid var(--qx-line) !important;
+  border-radius: 16px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9) !important;
+}
+
+.qx-reborn-header-search input {
+  min-width: 0 !important;
+  width: 100% !important;
+  height: 42px !important;
+  padding: 0 !important;
+  color: var(--qx-ink) !important;
+  background: transparent !important;
+  border: 0 !important;
+  outline: 0 !important;
+  font-size: .94rem !important;
+  font-weight: 680 !important;
+}
+
+.qx-reborn-top-actions button,
+.qx-reborn-filterbar button,
+.qx-reborn-card-actions button {
+  padding: 0 15px !important;
+}
+
+.qx-reborn-top-actions button.primary,
+.qx-reborn-filterbar button.primary {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, var(--qx-primary), #5e7af0) !important;
+  border-color: transparent !important;
+  box-shadow: 0 14px 30px rgba(47, 99, 232, .28) !important;
+}
+
+.qx-reborn-page {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 18px !important;
+}
+
+.qx-reborn-topbar,
+.qx-reborn-page > .qx-reborn-stats,
+.qx-reborn-page > .qx-reborn-tabs,
+.qx-reborn-page > .qx-reborn-filterbar,
+.qx-reborn-page > .qx-reborn-task-grid,
+.qx-reborn-page > .qx-reborn-pagination {
+  width: 100% !important;
+  max-width: var(--qx-task-wall-max) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.qx-reborn-topbar {
+  margin-top: 0 !important;
+  margin-bottom: 18px !important;
+}
+
+.qx-reborn-stats {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+.qx-reborn-stats article,
+.qx-reborn-tabs,
+.qx-reborn-filterbar,
+.qx-reborn-table,
+.qx-reborn-settings-nav,
+.qx-reborn-settings-panel,
+.qx-reborn-media-card,
+.qx-reborn-task-card {
+  background: var(--qx-surface) !important;
+  border: 1px solid rgba(255,255,255,.9) !important;
+  box-shadow: var(--qx-shadow-soft) !important;
+}
+
+.qx-reborn-stats article {
+  position: relative !important;
+  min-width: 0 !important;
+  min-height: 116px !important;
+  padding: 22px 22px 20px !important;
+  display: grid !important;
+  grid-template-columns: 56px minmax(0, 1fr) !important;
+  grid-template-rows: auto auto auto !important;
+  align-items: center !important;
+  column-gap: 16px !important;
+  border-radius: 20px !important;
+}
+
+.qx-reborn-stat-icon {
+  grid-row: 1 / 4 !important;
+  width: 52px !important;
+  height: 52px !important;
+  display: grid !important;
+  place-items: center !important;
+  color: var(--qx-primary) !important;
+  background: rgba(47, 99, 232, .1) !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+}
+
+.qx-reborn-stat-icon i {
+  display: block !important;
+  color: currentColor !important;
+  font-size: 1.08rem !important;
+  line-height: 1 !important;
+}
+
+.qx-reborn-stat-icon.teal {
+  color: #0ea5a8 !important;
+  background: rgba(20, 184, 166, .13) !important;
+  box-shadow: none !important;
+}
+
+.qx-reborn-stat-icon.green {
+  color: #16a34a !important;
+  background: rgba(34, 197, 94, .13) !important;
+  box-shadow: none !important;
+}
+
+.qx-reborn-stat-icon.amber {
+  color: #f97316 !important;
+  background: rgba(249, 115, 22, .13) !important;
+  box-shadow: none !important;
+}
+
+.qx-reborn-stats span,
+.qx-reborn-stats small {
+  display: block !important;
+  color: var(--qx-muted) !important;
+  font-size: .8rem !important;
+  font-weight: 700 !important;
+}
+
+.qx-reborn-stats strong {
+  display: block !important;
+  margin: 3px 0 4px !important;
+  color: var(--qx-ink) !important;
+  font-size: 2rem !important;
+  line-height: 1 !important;
+  font-weight: 880 !important;
+}
+
+.qx-reborn-tabs,
+.qx-reborn-filterbar {
+  padding: 12px !important;
+  border-radius: 20px !important;
+}
+
+.qx-reborn-tabs {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 22px !important;
+  padding: 0 18px !important;
+  min-height: 64px !important;
+}
+
+.qx-reborn-tabs button {
+  position: relative !important;
+  min-height: 64px !important;
+  padding: 0 !important;
+  color: var(--qx-muted) !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 0 !important;
+  font-weight: 820 !important;
+}
+
+.qx-reborn-tabs button.active {
+  color: var(--qx-primary) !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.qx-reborn-tabs button.active::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  height: 3px !important;
+  background: var(--qx-primary) !important;
+  border-radius: 999px 999px 0 0 !important;
+}
+
+.qx-reborn-filterbar input,
+.qx-reborn-filterbar select,
+.qx-reborn-setting-grid input,
+.qx-reborn-setting-grid select,
+.qx-reborn-inline-field input,
+.qx-reborn-inline-field select,
+.qx-reborn-display-grid select,
+.qx-reborn-settings-panel textarea {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 44px !important;
+  padding: 0 14px !important;
+  color: var(--qx-ink) !important;
+  background: rgba(255,255,255,.84) !important;
+  border: 1px solid var(--qx-line) !important;
+  border-radius: 14px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9) !important;
+  outline: none !important;
+  font-size: .94rem !important;
+  font-weight: 650 !important;
+}
+
+.qx-reborn-filterbar input {
+  flex: 1 1 260px !important;
+}
+
+.qx-reborn-filterbar select {
+  flex: 0 1 210px !important;
+}
+
+.qx-reborn-filter-toggle {
+  margin-left: auto !important;
+  color: #274060 !important;
+  background: rgba(255,255,255,.9) !important;
+  border: 1px solid var(--qx-line) !important;
+}
+
+@media (min-width: 768px) {
+  .qx-reborn-filterbar input {
+    display: none !important;
+  }
+}
+
+.qx-reborn-task-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(var(--qx-task-card-min), 1fr)) !important;
+  gap: 16px !important;
+}
+
+.qx-reborn-pagination {
+  min-height: 64px !important;
+  margin-top: 16px !important;
+  padding: 12px 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  background: var(--qx-surface) !important;
+  border: 1px solid rgba(255,255,255,.9) !important;
+  border-radius: 20px !important;
+  box-shadow: var(--qx-shadow-soft) !important;
+}
+
+.qx-reborn-pagination button,
+.qx-reborn-pagination select {
+  min-width: 42px !important;
+  height: 42px !important;
+  padding: 0 13px !important;
+  color: #51627c !important;
+  background: rgba(255,255,255,.9) !important;
+  border: 1px solid var(--qx-line) !important;
+  border-radius: 12px !important;
+  font-size: .9rem !important;
+  font-weight: 780 !important;
+  outline: none !important;
+}
+
+.qx-reborn-pagination button {
+  display: inline-grid !important;
+  place-items: center !important;
+  cursor: pointer !important;
+}
+
+.qx-reborn-pagination button.active {
+  color: var(--qx-primary) !important;
+  border-color: rgba(47, 99, 232, .35) !important;
+  background: rgba(47, 99, 232, .08) !important;
+}
+
+.qx-reborn-pagination button:disabled {
+  cursor: not-allowed !important;
+  opacity: .45 !important;
+}
+
+.qx-reborn-pagination select {
+  min-width: 122px !important;
+}
+
+.qx-reborn-pagination > span {
+  color: #657083 !important;
+  font-size: .9rem !important;
+  font-weight: 720 !important;
+}
+
+.qx-reborn-task-card {
+  position: relative !important;
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: 128px minmax(0, 1fr) !important;
+  grid-template-rows: 1fr auto !important;
+  overflow: hidden !important;
+  border-radius: 22px !important;
+  transition: transform .18s var(--qx-ease), box-shadow .18s var(--qx-ease) !important;
+}
+
+.qx-reborn-task-card::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.46), rgba(255,255,255,0)) !important;
+  opacity: .72 !important;
+}
+
+.qx-reborn-task-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 18px 44px rgba(31, 45, 74, .12) !important;
+}
+
+.qx-reborn-task-card:hover .qx-reborn-poster img {
+  transform: scale(1.025) !important;
+}
+
+.qx-reborn-poster {
+  position: relative !important;
+  grid-row: 1 / 3 !important;
+  min-height: 184px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: linear-gradient(135deg, #dbe6f6, #f7f9fc) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+.qx-reborn-poster img,
+.qx-reborn-media-card img {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  object-fit: cover !important;
+  transition: transform .22s var(--qx-ease), filter .22s var(--qx-ease) !important;
+}
+
+.qx-reborn-poster b {
+  position: absolute !important;
+  right: 10px !important;
+  bottom: 10px !important;
+  min-width: 42px !important;
+  padding: 6px 9px !important;
+  color: #ffffff !important;
+  background: rgba(16, 24, 40, .86) !important;
+  border-radius: 999px !important;
+  font-size: .8rem !important;
+  font-weight: 880 !important;
+}
+
+.qx-reborn-task-body {
+  min-width: 0 !important;
+  padding: 16px 16px 12px !important;
+}
+
+.qx-reborn-task-head {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+}
+
+.qx-reborn-task-head h3 {
+  min-width: 0 !important;
+  margin: 0 !important;
+  color: var(--qx-ink) !important;
+  font-size: 1rem !important;
+  line-height: 1.35 !important;
+  font-weight: 850 !important;
+}
+
+.qx-reborn-task-head h3 span {
+  display: -webkit-box !important;
+  overflow: hidden !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+}
+
+.qx-reborn-task-head > span {
+  flex: 0 0 auto !important;
+  padding: 5px 9px !important;
+  color: #1d4ed8 !important;
+  background: #eaf0ff !important;
+  border: 1px solid rgba(47, 99, 232, .18) !important;
+  border-radius: 999px !important;
+  font-size: .75rem !important;
+  font-weight: 820 !important;
+}
+
+.qx-reborn-meta {
+  margin-top: 11px !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+}
+
+.qx-reborn-meta span {
+  max-width: 100% !important;
+  padding: 4px 8px !important;
+  color: #344054 !important;
+  background: var(--qx-soft) !important;
+  border-radius: 999px !important;
+  font-size: .75rem !important;
+  font-weight: 760 !important;
+}
+
+.qx-reborn-task-body p {
+  margin: 10px 0 0 !important;
+  overflow: hidden !important;
+  color: var(--qx-muted) !important;
+  font-size: .86rem !important;
+  line-height: 1.45 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.qx-reborn-task-body p.path {
+  color: #2457c5 !important;
+}
+
+.qx-reborn-progress {
+  height: 8px !important;
+  margin-top: 12px !important;
+  overflow: hidden !important;
+  background: #dfe7f2 !important;
+  border-radius: 999px !important;
+}
+
+.qx-reborn-progress span {
+  display: block !important;
+  height: 100% !important;
+  min-width: 3px !important;
+  background: linear-gradient(90deg, var(--qx-primary), var(--qx-primary-2)) !important;
+  border-radius: inherit !important;
+}
+
+.qx-reborn-card-actions {
+  grid-column: 2 !important;
+  justify-content: flex-end !important;
+  padding: 11px 16px 14px !important;
+  background: rgba(248,250,252,.74) !important;
+  border-top: 1px solid var(--qx-line) !important;
+}
+
+.qx-reborn-card-actions button {
+  min-height: 34px !important;
+  padding: 0 12px !important;
+  border-radius: 12px !important;
+  font-size: .86rem !important;
+}
+
+.qx-reborn-card-actions button:not(.danger) {
+  color: #26364d !important;
+  background: rgba(255,255,255,.78) !important;
+  border-color: rgba(130,148,177,.2) !important;
+}
+
+.qx-reborn-card-actions button.danger,
+.qx-reborn-inline-field button.danger {
+  color: var(--qx-danger) !important;
+  background: rgba(255,245,245,.72) !important;
+  border-color: rgba(239,68,68,.22) !important;
+}
+
+.qx-reborn-settings {
+  grid-template-columns: 230px minmax(0, 1fr) !important;
+  align-items: start !important;
+}
+
+.qx-reborn-settings-nav,
+.qx-reborn-settings-panel {
+  border-radius: 22px !important;
+}
+
+.qx-reborn-settings-nav {
+  position: sticky !important;
+  top: 0 !important;
+  padding: 12px !important;
+  display: grid !important;
+  gap: 8px !important;
+}
+
+.qx-reborn-settings-nav button {
+  justify-content: flex-start !important;
+  min-height: 44px !important;
+  padding: 0 12px !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.qx-reborn-settings-panel {
+  min-height: 620px !important;
+  padding: 22px !important;
+}
+
+.qx-reborn-panel-head {
+  margin-bottom: 18px !important;
+  padding: 0 0 16px !important;
+  border-bottom: 1px solid var(--qx-line) !important;
+}
+
+.qx-reborn-panel-head span {
+  display: block !important;
+  color: var(--qx-primary) !important;
+  font-size: .78rem !important;
+  font-weight: 820 !important;
+}
+
+.qx-reborn-panel-head h2 {
+  margin: 4px 0 6px !important;
+  color: var(--qx-ink) !important;
+  font-size: 1.28rem !important;
+  font-weight: 860 !important;
+}
+
+.qx-reborn-panel-head p {
+  margin: 0 !important;
+  color: var(--qx-muted) !important;
+  line-height: 1.55 !important;
+}
+
+.qx-reborn-setting-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)) !important;
+  gap: 16px !important;
+}
+
+.qx-reborn-setting-grid label,
+.qx-reborn-display-grid label {
+  min-width: 0 !important;
+  margin: 0 !important;
+  display: grid !important;
+  gap: 8px !important;
+}
+
+.qx-reborn-setting-grid label.wide {
+  grid-column: 1 / -1 !important;
+}
+
+.qx-reborn-setting-grid label span,
+.qx-reborn-display-grid label span,
+.qx-reborn-inline-field > span {
+  color: #344054 !important;
+  font-size: .84rem !important;
+  font-weight: 790 !important;
+}
+
+.qx-reborn-setting-stack {
+  display: grid !important;
+  gap: 12px !important;
+}
+
+.qx-reborn-inline-field {
+  min-width: 0 !important;
+  padding: 12px !important;
+  display: grid !important;
+  grid-template-columns: 112px minmax(0, 1fr) auto auto !important;
+  align-items: end !important;
+  gap: 10px !important;
+  background: rgba(248,250,252,.78) !important;
+  border: 1px solid var(--qx-line) !important;
+  border-radius: 18px !important;
+}
+
+.qx-reborn-inline-field-wide {
+  grid-template-columns: 90px minmax(120px, .7fr) minmax(160px, 1fr) minmax(160px, 1fr) auto auto !important;
+}
+
+.qx-reborn-display-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)) !important;
+  gap: 14px !important;
+}
+
+.qx-reborn-poster-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)) !important;
+  gap: 16px !important;
+}
+
+.qx-reborn-media-card {
+  overflow: hidden !important;
+  border-radius: 22px !important;
+}
+
+.qx-reborn-media-card > button {
+  width: 100% !important;
+  aspect-ratio: 2 / 3 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: #dbe6f6 !important;
+  border-radius: 0 !important;
+}
+
+.qx-reborn-media-card h3 {
+  margin: 12px 14px 4px !important;
+  color: var(--qx-ink) !important;
+  font-size: .98rem !important;
+  font-weight: 820 !important;
+}
+
+.qx-reborn-media-card p {
+  margin: 0 14px 12px !important;
+  color: var(--qx-muted) !important;
+  font-size: .84rem !important;
+}
+
+.qx-reborn-media-card div {
+  padding: 0 14px 14px !important;
+  display: flex !important;
+  gap: 8px !important;
+}
+
+.qx-reborn-media-card div button {
+  min-height: 36px !important;
+  flex: 1 1 0 !important;
+}
+
+.qx-reborn-table {
+  overflow: hidden !important;
+  border-radius: 22px !important;
+}
+
+.qx-reborn-table-row {
+  display: grid !important;
+  grid-template-columns: minmax(160px, 1.1fr) minmax(220px, 2fr) minmax(140px, .8fr) !important;
+  gap: 12px !important;
+  padding: 14px 16px !important;
+  border-top: 1px solid var(--qx-line) !important;
+  color: #344054 !important;
+  font-size: .9rem !important;
+}
+
+.qx-reborn-table-row.head {
+  border-top: 0 !important;
+  background: rgba(248,250,252,.78) !important;
+  color: var(--qx-ink) !important;
+  font-weight: 840 !important;
+}
+
+.qx-reborn-log {
+  padding: 16px !important;
+  min-height: 620px !important;
+  overflow: auto !important;
+  color: #d6e3f5 !important;
+  background: #111827 !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  border-radius: 22px !important;
+  box-shadow: var(--qx-shadow-soft) !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  font-size: .84rem !important;
+}
+
+.qx-reborn-log > div {
+  display: flex !important;
+  gap: 9px !important;
+  padding: 3px 0 !important;
+}
+
+.qx-reborn-log > div > span:first-child {
+  flex: 0 0 auto !important;
+  color: #93c5fd !important;
+}
+
+.modal-content {
+  border: 1px solid var(--qx-line) !important;
+  border-radius: 22px !important;
+  box-shadow: var(--qx-shadow) !important;
+}
+
+body.login-page {
+  min-height: 100dvh !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 24px !important;
+  background: var(--qx-bg) !important;
+}
+
+body.login-page .login-card {
+  width: min(440px, 100%) !important;
+  padding: 26px !important;
+  background: rgba(255,255,255,.88) !important;
+  border: 1px solid rgba(255,255,255,.9) !important;
+  border-radius: 28px !important;
+  box-shadow: var(--qx-shadow) !important;
+}
+
+body.login-page .login-title,
+body.login-page .login-title a {
+  color: var(--qx-ink) !important;
+  font-weight: 880 !important;
+  text-decoration: none !important;
+}
+
+body.login-page .login-subtitle {
+  color: var(--qx-muted) !important;
+}
+
+body.login-page .form-control {
+  min-height: 46px !important;
+  border: 1px solid var(--qx-line) !important;
+  border-radius: 14px !important;
+}
+
+body.login-page .btn {
+  width: 100% !important;
+  min-height: 46px !important;
+  color: #fff !important;
+  background: linear-gradient(135deg, var(--qx-primary), #5e7af0) !important;
+  border: 0 !important;
+  border-radius: 14px !important;
+  font-weight: 820 !important;
+}
+
+@media (max-width: 1180px) {
+  .qx-reborn-app {
+    width: 100vw !important;
+    min-height: 100dvh !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    grid-template-columns: 1fr !important;
+    background: var(--qx-canvas) !important;
+  }
+
+  .qx-reborn-sidebar {
+    min-height: auto !important;
+    padding: 16px !important;
+    grid-template-rows: auto auto !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid var(--qx-line) !important;
+  }
+
+  .qx-reborn-sidebar-section,
+  .qx-reborn-sidebar-status {
+    display: none !important;
+  }
+
+  .qx-reborn-brand {
+    max-width: 360px !important;
+  }
+
+  .qx-reborn-nav {
+    display: flex !important;
+    overflow-x: auto !important;
+    padding: 2px 0 6px !important;
+  }
+
+  .qx-reborn-nav button {
+    width: auto !important;
+    min-width: max-content !important;
+    padding: 0 14px !important;
+  }
+
+  .qx-reborn-logout {
+    display: none !important;
+  }
+
+  .qx-reborn-main {
+    min-height: auto !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  :root {
+    --qx-task-card-min: 0px;
+  }
+
+  .qx-reborn-main {
+    padding: 14px !important;
+  }
+
+  .qx-reborn-sidebar {
+    padding: 10px !important;
+  }
+
+  .qx-reborn-brand {
+    grid-template-columns: 48px minmax(0, 1fr) !important;
+    gap: 10px !important;
+    padding: 8px !important;
+    border-radius: 18px !important;
+  }
+
+  .qx-reborn-brand > span {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 15px !important;
+  }
+
+  .qx-reborn-brand strong {
+    font-size: 1.04rem !important;
+  }
+
+  .qx-reborn-nav {
+    gap: 8px !important;
+    padding: 0 0 4px !important;
+  }
+
+  .qx-reborn-nav button {
+    min-height: 44px !important;
+    padding: 0 14px !important;
+    border-radius: 15px !important;
+    font-size: .95rem !important;
+  }
+
+  .qx-reborn-mobile-topbar-compact,
+  .qx-reborn-topbar {
+    min-height: 0 !important;
+    padding: 14px !important;
+    display: grid !important;
+    border-radius: 20px !important;
+    gap: 12px !important;
+  }
+
+  .qx-reborn-kicker {
+    margin-bottom: 2px !important;
+    font-size: .72rem !important;
+  }
+
+  .qx-reborn-topbar h1 {
+    font-size: 1.72rem !important;
+    line-height: 1.12 !important;
+  }
+
+  .qx-reborn-topbar p {
+    margin-top: 7px !important;
+    font-size: .92rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .qx-reborn-top-actions {
+    width: 100% !important;
+    gap: 10px !important;
+  }
+
+  .qx-reborn-header-search {
+    min-width: 100% !important;
+    width: 100% !important;
+    min-height: 44px !important;
+  }
+
+  .qx-reborn-top-actions button {
+    flex: 1 1 auto !important;
+    min-height: 44px !important;
+  }
+
+  .qx-reborn-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .qx-reborn-mobile-compact-stat,
+  .qx-reborn-stats article {
+    min-height: 82px !important;
+    grid-template-columns: 40px minmax(0, 1fr) !important;
+    column-gap: 10px !important;
+    padding: 12px !important;
+    border-radius: 17px !important;
+  }
+
+  .qx-reborn-stat-icon {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .qx-reborn-stats span,
+  .qx-reborn-stats small {
+    font-size: .74rem !important;
+    line-height: 1.25 !important;
+  }
+
+  .qx-reborn-stats strong {
+    margin: 2px 0 !important;
+    font-size: 1.46rem !important;
+  }
+
+  .qx-reborn-mobile-tabs-scroll,
+  .qx-reborn-tabs {
+    min-height: 56px !important;
+    flex-wrap: nowrap !important;
+    gap: 22px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x proximity !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .qx-reborn-tabs button {
+    min-width: max-content !important;
+    min-height: 56px !important;
+    scroll-snap-align: start !important;
+  }
+
+  .qx-reborn-task-grid,
+  .qx-reborn-poster-grid,
+  .qx-reborn-settings {
+    grid-template-columns: 1fr !important;
+  }
+
+  .qx-reborn-task-card {
+    grid-template-columns: 126px minmax(0, 1fr) !important;
+  }
+
+  .qx-reborn-poster {
+    min-height: 196px !important;
+  }
+
+  .qx-reborn-settings-nav {
+    position: static !important;
+    display: flex !important;
+    overflow-x: auto !important;
+    padding: 10px !important;
+  }
+
+  .qx-reborn-settings-nav button {
+    min-width: max-content !important;
+  }
+
+  .qx-reborn-setting-grid,
+  .qx-reborn-display-grid,
+  .qx-reborn-inline-field,
+  .qx-reborn-inline-field-wide,
+  .qx-reborn-table-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .qx-reborn-card-actions {
+    justify-content: flex-start !important;
+  }
+
+  .qx-reborn-pagination {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .qx-reborn-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .qx-reborn-task-card {
+    grid-template-columns: 104px minmax(0, 1fr) !important;
+  }
+
+  .qx-reborn-card-actions {
+    grid-column: 1 / -1 !important;
+  }
+
+  .qx-reborn-poster {
+    min-height: 176px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qx-reborn-app *,
+  .login-page * {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

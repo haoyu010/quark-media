@@ -1,0 +1,18 @@
+services:
+  quark-media:
+    build: .
+    image: ghcr.io/haoyu010/quark-media:latest
+    container_name: quark-media
+    restart: unless-stopped
+    ports:
+      - "${QM_PORT:-18025}:18025"
+    environment:
+      TZ: Asia/Shanghai
+      QM_PUBLIC_BASE: ${QM_PUBLIC_BASE:-http://192.168.10.14:18025}
+      EMBY_BASE_URL: ${EMBY_BASE_URL:-http://192.168.10.14:8096}
+      EMBY_API_KEY: ${EMBY_API_KEY:-}
+      EMBY_ENABLED: ${EMBY_ENABLED:-false}
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+      - ./strm:/app/strm

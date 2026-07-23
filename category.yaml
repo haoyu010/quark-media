@@ -1,0 +1,32 @@
+# 分类整理规则（类似 Casby category）
+# 命中后生成网盘/STRM 相对路径
+
+settings:
+  root: ""   # 可选总根，如 影视
+  fallback: "其他/{title}"
+
+rules:
+  - name: anime
+    keywords: ["动漫", "动画", "番剧", "OVA", "剧场版", "Anime"]
+    genres: ["Animation", "动画"]
+    path: "动漫/{title}/Season {season:02d}"
+
+  - name: variety
+    keywords: ["综艺", "真人秀", "Variety"]
+    genres: ["真人秀", "脱口秀"]
+    path: "综艺/{title}"
+
+  - name: documentary
+    keywords: ["纪录片", "Documentary"]
+    genres: ["纪录片", "Documentary"]
+    path: "纪录片/{title}"
+
+  - name: movie
+    keywords: ["电影", "Movie", "电影版"]
+    content_types: ["movie"]
+    path: "电影/{title} ({year})"
+
+  - name: tv
+    keywords: ["剧集", "电视剧", "网剧", "TV"]
+    content_types: ["tv", "show"]
+    path: "电视剧/{title}/Season {season:02d}"

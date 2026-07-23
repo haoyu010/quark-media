@@ -1,0 +1,347 @@
+/* --------------- MUI Premium Layer v3 --------------- */
+:root {
+  --qasx-premium-primary: #4f46e5;
+  --qasx-premium-primary-strong: #4338ca;
+  --qasx-premium-primary-soft: #e0e7ff;
+  --qasx-premium-secondary: #6366f1;
+  --qasx-premium-accent: #ea580c;
+  --qasx-md3-surface: #fff;
+  --qasx-md3-surface-container-low: #fbfbff;
+  --qasx-md3-surface-container: #f4f3ff;
+  --qasx-md3-surface-container-high: #ede9fe;
+  --qasx-md3-outline: rgba(49, 46, 129, 0.14);
+  --qasx-premium-text: #111827;
+  --qasx-premium-muted: #5b6475;
+  --qasx-state-layer-hover: rgba(79, 70, 229, 0.08);
+  --qasx-state-layer-pressed: rgba(79, 70, 229, 0.14);
+  --qasx-elevation-1: 0 1px 2px rgba(17, 24, 39, 0.06), 0 1px 3px rgba(17, 24, 39, 0.08);
+  --qasx-elevation-2: 0 8px 20px rgba(17, 24, 39, 0.08), 0 2px 6px rgba(17, 24, 39, 0.05);
+  --qasx-elevation-3: 0 18px 42px rgba(17, 24, 39, 0.10), 0 6px 16px rgba(79, 70, 229, 0.08);
+  --qasx-elevation-4: 0 28px 72px rgba(17, 24, 39, 0.14), 0 10px 28px rgba(79, 70, 229, 0.12);
+  --qasx-premium-radius-card: 26px;
+  --qasx-premium-radius-control: 16px;
+  --qasx-premium-ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+html,
+body:not(.login-page) {
+  background:
+    radial-gradient(circle at 9% -4%, rgba(79, 70, 229, 0.16), transparent 32%),
+    radial-gradient(circle at 90% 0%, rgba(234, 88, 12, 0.10), transparent 28%),
+    linear-gradient(180deg, #f8f7ff 0%, #f5f7fb 42%, #eef2ff 100%) fixed !important;
+  background-blend-mode: normal;
+}
+
+body:not(.login-page) {
+  color: var(--qasx-premium-text) !important;
+  text-rendering: geometricPrecision;
+}
+
+.navbar.navbar-dark.bg-dark,
+.sidebar.bg-light,
+.sidebar {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(129, 140, 248, 0.28), transparent 34%),
+    linear-gradient(180deg, #17173a 0%, #0f172a 58%, #070b18 100%) !important;
+}
+
+.navbar-brand-mark {
+  background:
+    linear-gradient(135deg, rgba(129, 140, 248, 0.30), rgba(79, 70, 229, 0.20)) !important;
+  border-color: rgba(199, 210, 254, 0.32) !important;
+}
+
+.navbar-brand i.bi-clouds {
+  color: #c7d2fe !important;
+}
+
+.sidebar .nav-link {
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar .nav-link::before {
+  content: "";
+  position: absolute;
+  inset: 7px auto 7px 7px;
+  width: 3px;
+  border-radius: 999px;
+  background: transparent;
+  transition: background .18s var(--qasx-premium-ease);
+}
+
+.sidebar .nav-link:hover {
+  background: rgba(99, 102, 241, 0.15) !important;
+}
+
+.sidebar .nav-link.active {
+  background:
+    linear-gradient(135deg, var(--qasx-premium-primary), var(--qasx-premium-secondary)) !important;
+  box-shadow: 0 14px 32px rgba(79, 70, 229, 0.34) !important;
+}
+
+.sidebar .nav-link.active::before {
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.tasklist-workbench-page .task-dashboard-hero,
+.discovery-page-shell .discovery-hero-panel {
+  border-color: var(--qasx-md3-outline) !important;
+  background:
+    radial-gradient(circle at 92% 14%, rgba(79, 70, 229, 0.18), transparent 30%),
+    radial-gradient(circle at 8% 92%, rgba(234, 88, 12, 0.08), transparent 34%),
+    linear-gradient(135deg, #ffffff 0%, #fbfbff 48%, #f4f3ff 100%) !important;
+  box-shadow: var(--qasx-elevation-3) !important;
+}
+
+.tasklist-workbench-page .task-dashboard-hero::before,
+.discovery-page-shell .discovery-hero-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, rgba(255,255,255,0.64), transparent 34%),
+    radial-gradient(circle at 88% 20%, rgba(255,255,255,0.7), transparent 24%);
+  opacity: 0.82;
+}
+
+.tasklist-workbench-page .task-dashboard-copy,
+.tasklist-workbench-page .task-dashboard-metrics,
+.discovery-page-shell .discovery-hero-copy,
+.discovery-page-shell .discovery-hero-art {
+  position: relative;
+  z-index: 1;
+}
+
+.tasklist-workbench-page .task-dashboard-eyebrow,
+.task-dashboard-eyebrow,
+.discovery-page-shell .discovery-kicker {
+  border-color: rgba(79, 70, 229, 0.18) !important;
+  background: var(--qasx-premium-primary-soft) !important;
+  color: var(--qasx-premium-primary-strong) !important;
+}
+
+.tasklist-workbench-page .task-dashboard-copy h1,
+.discovery-page-shell .discovery-hero-copy h2 {
+  background: linear-gradient(135deg, #111827 0%, #312e81 52%, #4f46e5 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+}
+
+.tasklist-workbench-page .task-dashboard-metric {
+  border-color: rgba(79, 70, 229, 0.10) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 243, 255, 0.82)) !important;
+  box-shadow: var(--qasx-elevation-2) !important;
+}
+
+.tasklist-workbench-page .task-dashboard-metric strong {
+  color: var(--qasx-premium-primary-strong) !important;
+}
+
+.tasklist-workbench-page .task,
+.discovery-page-shell .discovery-card,
+.config-workbench-page .form-group.row,
+.config-workbench-page .row.mb-2,
+.notify-panel,
+.source-panel,
+.calendar-task-card,
+.runlog-content,
+.table-responsive,
+.modal-content {
+  border-color: rgba(49, 46, 129, 0.10) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(251, 251, 255, 0.94)) !important;
+  box-shadow: var(--qasx-elevation-2) !important;
+}
+
+.tasklist-workbench-page .task:hover,
+.discovery-page-shell .discovery-card:hover,
+.calendar-task-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(79, 70, 229, 0.22) !important;
+  box-shadow: var(--qasx-elevation-4) !important;
+}
+
+.config-workbench-page .row.title.config-accordion-title,
+.config-workbench-page .row.title {
+  border-color: rgba(79, 70, 229, 0.12) !important;
+  background:
+    linear-gradient(135deg, #ffffff 0%, #fbfbff 48%, #f4f3ff 100%) !important;
+  box-shadow: var(--qasx-elevation-1) !important;
+}
+
+.config-workbench-page .row.title.config-accordion-title:hover,
+.config-workbench-page .config-accordion-title.is-open {
+  border-color: rgba(79, 70, 229, 0.24) !important;
+  background:
+    linear-gradient(135deg, #ffffff 0%, #f8f7ff 44%, #ede9fe 100%) !important;
+  box-shadow: var(--qasx-elevation-2) !important;
+}
+
+.config-workbench-page .config-accordion-toggle,
+.task .btn.btn-block.text-left .badge,
+.task-index-badge,
+.task .badge,
+.badge-info {
+  background: var(--qasx-premium-primary-soft) !important;
+  color: var(--qasx-premium-primary-strong) !important;
+}
+
+.btn,
+button.btn,
+.calendar-category-btn,
+.filter-btn-square,
+.tasklist-count-indicator,
+.discovery-page-shell .discovery-btn,
+.discovery-page-shell .discovery-search-types button,
+.notify-primary-btn,
+.notify-secondary-btn,
+.icon-btn {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--qasx-premium-radius-control) !important;
+}
+
+.btn::after,
+button.btn::after,
+.calendar-category-btn::after,
+.filter-btn-square::after,
+.discovery-page-shell .discovery-btn::after,
+.discovery-page-shell .discovery-search-types button::after,
+.icon-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--qasx-state-layer-hover);
+  opacity: 0;
+  transition: opacity .14s var(--qasx-premium-ease);
+}
+
+.btn:hover::after,
+button.btn:hover::after,
+.calendar-category-btn:hover::after,
+.filter-btn-square:hover::after,
+.discovery-page-shell .discovery-btn:hover::after,
+.discovery-page-shell .discovery-search-types button:hover::after,
+.icon-btn:hover::after {
+  opacity: 1;
+}
+
+.btn:active,
+button.btn:active,
+.calendar-category-btn:active,
+.filter-btn-square:active,
+.discovery-page-shell .discovery-btn:active,
+.discovery-page-shell .discovery-search-types button:active,
+.icon-btn:active {
+  transform: translateY(0) scale(0.985) !important;
+}
+
+.btn-primary,
+.calendar-category-btn.active,
+.tasklist-type-filter .calendar-category-btn.active,
+.discovery-page-shell .discovery-btn.active,
+.discovery-page-shell .discovery-search-types button.active,
+.notify-primary-btn {
+  border-color: var(--qasx-premium-primary) !important;
+  background:
+    linear-gradient(135deg, var(--qasx-premium-primary), var(--qasx-premium-secondary)) !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 28px rgba(79, 70, 229, 0.26) !important;
+}
+
+.btn-outline-primary,
+.discovery-page-shell .discovery-refresh-btn {
+  color: var(--qasx-premium-primary-strong) !important;
+  border-color: rgba(79, 70, 229, 0.22) !important;
+  background: rgba(79, 70, 229, 0.055) !important;
+}
+
+.form-control:focus,
+select.form-control:focus,
+textarea.form-control:focus,
+.custom-select:focus {
+  border-color: rgba(79, 70, 229, 0.62) !important;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.13) !important;
+}
+
+.discovery-page-shell .discovery-poster,
+.tasklist-poster-mode .discovery-poster {
+  box-shadow: inset 0 0 0 1px rgba(49, 46, 129, 0.08), 0 12px 28px rgba(17, 24, 39, 0.10) !important;
+}
+
+.table thead th,
+main .table thead th {
+  background:
+    linear-gradient(180deg, var(--qasx-md3-surface-container-low), var(--qasx-md3-surface-container)) !important;
+}
+
+.runlog-content .runlog-line:hover,
+.table tbody tr:hover {
+  background: var(--qasx-state-layer-hover) !important;
+}
+
+@media (min-width: 768px) {
+  main,
+  main.col-md-10,
+  main.col-lg-10,
+  main.ml-sm-auto {
+    padding: 22px 28px 36px !important;
+  }
+
+  .tasklist-workbench-page .task-dashboard-hero,
+  .discovery-page-shell .discovery-hero-panel {
+    border-radius: 30px !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  body:not(.login-page) {
+    background:
+      radial-gradient(circle at 12% -6%, rgba(79, 70, 229, 0.14), transparent 30%),
+      linear-gradient(180deg, #fbfbff 0%, #f5f7fb 100%) fixed !important;
+  }
+
+  .tasklist-workbench-page .task-dashboard-hero,
+  .discovery-page-shell .discovery-hero-panel,
+  .tasklist-workbench-page .task,
+  .discovery-page-shell .discovery-card,
+  .config-workbench-page .row.title,
+  .config-workbench-page .form-group.row,
+  .table-responsive,
+  .runlog-content,
+  .modal-content {
+    border-radius: 20px !important;
+    box-shadow: var(--qasx-elevation-1) !important;
+  }
+
+  .btn,
+  button.btn,
+  .calendar-category-btn,
+  .filter-btn-square,
+  .tasklist-count-indicator,
+  .discovery-page-shell .discovery-btn,
+  .discovery-page-shell .discovery-search-types button,
+  .icon-btn {
+    min-height: 44px !important;
+  }
+
+  .tasklist-workbench-page .task-dashboard-metrics,
+  .discovery-page-shell .discovery-search-panel,
+  .discovery-page-shell .discovery-controls {
+    grid-template-columns: 1fr !important;
+  }
+
+  .tasklist-type-filter,
+  .discovery-page-shell .discovery-search-types,
+  .discovery-page-shell .discovery-main-buttons,
+  .discovery-page-shell .discovery-sub-buttons,
+  .tasklist-sort-controls {
+    overflow-x: auto !important;
+    overscroll-behavior-x: contain;
+  }
+}
