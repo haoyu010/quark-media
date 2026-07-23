@@ -5,8 +5,8 @@ const TITLES = {
   dashboard: ["总览", "运行状态与关键总览"],
   subs: ["订阅追更", "TMDB 海报墙 · 一键订阅"],
   mysubs: ["我的订阅", "已入库订阅 · 搜链补资源 · 管理"],
-  tasks: ["任务", "QAS 转存任务与本地扫库任务"],
-  strm: ["STRM 库", "Emby 扫描目录与播放地址"],
+  tasks: ["任务", "转存任务（完成后写 STRM）"],
+  strm: ["STRM 库", "转存后生成的播放索引"],
   play: ["播放测试", "验证 302 → m3u8 直链"],
   settings: ["设置", "账号 / QAS / 302 / Emby 配置"],
   logs: ["日志", "流水线与 302 运行摘要"],
@@ -163,7 +163,7 @@ async function loadStatus() {
 
   $("#svc-rows").innerHTML = `
     <div class="row"><span>public_base</span><span>${esc(s.public_base || "-")}</span></div>
-    <div class="row"><span>strm_root</span><span>${esc(s.strm_root || "-")}</span></div>
+    
     <div class="row"><span>端口</span><span>${s.port || "-"}</span></div>
     <div class="row"><span>定时间隔</span><span>${s.interval_seconds || "-"}s</span></div>`;
 
@@ -329,9 +329,7 @@ async function deleteTask(id) {
 
 async function loadStrm() {
   const data = await api("/api/strm");
-  $("#strm-root-info").innerHTML = `
-    <span class="pill-info">目录 <b>${esc(data.root || "-")}</b></span>
-    <span class="pill-info">数量 <b>${data.items?.length || 0}</b></span>`;
+  $("#strm-root-info").innerHTML = `<span class="pill-info">数量 <b>${data.items?.length || 0}</b></span>`; $("#strm-root-info").hidden = false;
   const tb = $("#strm-body");
   if (!data.items?.length) {
     tb.innerHTML = `<tr><td colspan="3" style="color:var(--muted)">暂无 STRM</td></tr>`;
@@ -385,8 +383,7 @@ function fillSettingsForm(d) {
   $("#set-port").value = d.server?.port || 18025;
   $("#set-public-base").value = d.server?.public_base || "";
   $("#set-interval").value = d.interval_seconds || 1800;
-  $("#set-strm-root").value = d.strm_root || "";
-  $("#set-video-exts").value = Array.isArray(d.video_exts) ? d.video_exts.join(",") : (d.video_exts || "");
+    $("#set-video-exts").value = Array.isArray(d.video_exts) ? d.video_exts.join(",") : (d.video_exts || "");
   $("#set-emby-enabled").checked = !!d.emby?.enabled;
   $("#set-emby-url").value = d.emby?.base_url || "";
   $("#set-emby-key").value = "";
@@ -462,7 +459,6 @@ function collectSettingsPatch() {
     qas_root: val("set-qas-root"),
     qas_config: val("set-qas-config"),
     interval_seconds: Number(val("set-interval") || 1800),
-    strm_root: val("set-strm-root"),
     video_exts: val("set-video-exts"),
     server: {
       host: val("set-host"),
@@ -537,7 +533,7 @@ async function loadLogs() {
 async function runOnce() {
   toast("流水线执行中…");
   const res = await api("/api/pipeline/run", { method: "POST" });
-  toast(`完成：视频 ${res.total_videos || 0}`);
+  toast(`转存+STRM 完成：${res.total_videos || 0} 个`);
   await refreshAll();
 }
 async function testPlay() {

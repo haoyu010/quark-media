@@ -20,6 +20,8 @@ server:
   # 改成 Emby/客户端能访问的地址
   public_base: http://192.168.10.14:18025
 
+# STRM 仅 Docker 挂载/环境变量自定义，Web UI 不展示
+# QM_STRM_ROOT 可覆盖（默认 /app/strm）
 strm_root: /app/strm
 video_exts: [.mp4, .mkv, .ts, .mov, .m4v, .avi, .webm, .flv]
 
@@ -27,6 +29,7 @@ emby:
   enabled: false
   base_url: http://192.168.10.14:8096
   api_key: ""
+  # Emby 库中的 STRM 根路径（与挂载一致，用于只刷对应路径）
   path: ""
 
 interval_seconds: 1800

@@ -120,7 +120,7 @@
           <section class="flow" id="capability-flow" aria-label="能力链路">
             <div class="flow-item f1"><div class="n">01</div><div class="t">转存追更</div><div class="d">QAS 多账号 / 任务 / TG 收链</div></div>
             <div class="flow-item f2"><div class="n">02</div><div class="t">整理分类</div><div class="d">category.yaml 路径规则</div></div>
-            <div class="flow-item f3"><div class="n">03</div><div class="t">生成 STRM</div><div class="d">扫库写 .strm 入库 Emby</div></div>
+            <div class="flow-item f3"><div class="n">03</div><div class="t">生成 STRM</div><div class="d">转存完写 .strm → Emby 入库</div></div>
             <div class="flow-item f4"><div class="n">04</div><div class="t">302 播放</div><div class="d">转码 m3u8 直连 CDN</div></div>
             <div class="flow-item f5"><div class="n">05</div><div class="t">媒体库</div><div class="d">Emby / Jellyfin 刷库</div></div>
           </section>
@@ -386,7 +386,7 @@
                 </tbody>
               </table>
             </div>
-            <div class="help" style="padding:12px 14px 14px">数据写入 <b>config.yaml → subscriptions</b>。定时扫库：<code>python main.py run</code>。</div>
+            <div class="help" style="padding:12px 14px 14px">数据写入 <b>config.yaml → subscriptions</b>。流水线：转存完成即写 STRM，入库交给 Emby。</div>
           </article>
         </section>
 <section class="page" id="page-settings">
@@ -772,24 +772,20 @@
               </section>
 
               <section class="settings-sec" id="sec-strm">
-                <div class="sec-title">
-                  <div>
-                    <h3>STRM 媒体库</h3>
-                    <p>生成的 .strm 输出位置，供 Emby 扫描。</p>
-                  </div>
-                  <span class="badge-soft">Library</span>
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h3>STRM 输出</h3>
+                  <p>路径不在 Web 配置。Docker 用卷挂载 / 环境变量自定义，Emby 扫该目录入库。</p>
                 </div>
-                <div class="form-grid">
-                  <div class="fg full">
-                    <label>STRM 输出目录</label>
-                    <input id="set-strm-root" class="field" />
-                  </div>
-                  <div class="fg full">
-                    <label>视频扩展名</label>
-                    <input id="set-video-exts" class="field" placeholder=".mp4,.mkv,.ts,.mov" />
-                  </div>
-                </div>
-              </section>
+              </div>
+              <div class="help" style="padding:12px 14px 14px">
+                容器内固定 <code>/app/strm</code>。<br>
+                宿主机改 <code>QM_STRM_HOST</code>（compose 映射）或挂载目录即可。<br>
+                流程：<b>转存完成 → 生成 .strm → Emby 刷库</b>（不做扫库）。
+              </div>
+            </div>
+          </section>
 
               <section class="settings-sec" id="sec-emby" data-enhanced="1">
                 <div class="sec-title">

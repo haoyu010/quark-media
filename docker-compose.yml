@@ -9,10 +9,11 @@ services:
     environment:
       TZ: Asia/Shanghai
       QM_PUBLIC_BASE: ${QM_PUBLIC_BASE:-http://192.168.10.14:18025}
+      QM_STRM_ROOT: ${QM_STRM_ROOT:-/app/strm}
       EMBY_BASE_URL: ${EMBY_BASE_URL:-http://192.168.10.14:8096}
       EMBY_API_KEY: ${EMBY_API_KEY:-}
       EMBY_ENABLED: ${EMBY_ENABLED:-false}
     volumes:
       - ./data:/app/data
       - ./config:/app/config
-      - ./strm:/app/strm
+      - ${QM_STRM_HOST:-./strm}:/app/strm

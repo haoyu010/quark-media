@@ -185,6 +185,12 @@ func Load(path string) (*Config, error) {
 	if os.Getenv("EMBY_ENABLED") == "true" {
 		cfg.Emby.Enabled = true
 	}
+	if v := os.Getenv("QM_STRM_ROOT"); v != "" {
+		cfg.StrmRoot = v
+	}
+	if cfg.StrmRoot == "" {
+		cfg.StrmRoot = "/app/strm"
+	}
 	return cfg, nil
 }
 
@@ -265,7 +271,6 @@ func (c *Config) SettingsPublic() map[string]any {
 			"port":        c.Server.Port,
 			"public_base": c.Server.PublicBase,
 		},
-		"strm_root":        c.StrmRoot,
 		"video_exts":       c.VideoExts,
 		"interval_seconds": c.Interval,
 		"emby": map[string]any{

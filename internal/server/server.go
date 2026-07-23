@@ -467,9 +467,6 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 	if _, ok := body["qas_config"]; ok {
 		a.Cfg.QASConfig = asStr(body["qas_config"])
 	}
-	if _, ok := body["strm_root"]; ok {
-		a.Cfg.StrmRoot = asStr(body["strm_root"])
-	}
 	if _, ok := body["category_file"]; ok {
 		a.Cfg.CategoryFile = asStr(body["category_file"])
 	}
@@ -806,12 +803,32 @@ func (a *App) handleEmbyRefresh(w http.ResponseWriter, r *http.Request) {
 	if id == "" {
 		id = asStr(body["item_id"])
 	}
-	ec := emby.New(a.Cfg.Emby.BaseURL, a.Cfg.Emby.APIKey)
-	if err := ec.Refresh(id); err != nil {
-		writeJSON(w, 500, map[string]any{"ok": false, "error": err.Error()})
+	pathHint := asStr(body["path"])
+	if pathHint == "" {
+		pathHint = asStr(body["media_path"])
+	}
+	ec := emby.New(a.Cfg.Emby.BaseURL, a.Cfg.Emby.APIKey).WithMediaRoot(a.Cfg.Emby.Path)
+	// prefer explicit path → only that media path / matching library
+	if pathHint != "" {
+		mp := ec.MapToEmbyPath(a.Cfg.StrmRoot, pathHint)
+		rr := ec.RefreshPaths([]string{mp})
+		if !rr.OK {
+			writeJSON(w, 500, map[string]any{"ok": false, "error": rr.Error, "result": rr})
+			return
+		}
+		writeJSON(w, 200, map[string]any{"ok": true, "result": rr})
 		return
 	}
-	writeJSON(w, 200, map[string]any{"ok": true})
+	if id != "" {
+		if err := ec.RefreshItem(id); err != nil {
+			writeJSON(w, 500, map[string]any{"ok": false, "error": err.Error()})
+			return
+		}
+		writeJSON(w, 200, map[string]any{"ok": true, "mode": "item", "item_id": id})
+		return
+	}
+	// refuse full library
+	writeJSON(w, 400, map[string]any{"ok": false, "error": "need path or item_id (no full-library refresh)"})
 }
 
 func (a *App) handleTgInbox(w http.ResponseWriter, r *http.Request) {
