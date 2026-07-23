@@ -765,29 +765,37 @@
                 <div class="sec-title">
                   <div>
                     <h3>302 播放服务</h3>
-                    <p>Emby / 播放器请求本服务后 302 到夸克 m3u8。</p>
+                    <p>已内置在本容器，无需另外部署。播放时本服务返回 302，客户端直连夸克 CDN（不经 NAS 流量）。</p>
                   </div>
-                  <span class="badge-soft">Playback</span>
+                  <span class="badge-soft">Built-in</span>
+                </div>
+                <div class="help" style="margin-bottom:14px;padding:12px 14px;border-radius:12px;background:var(--grad-soft)">
+                  <b>工作方式</b><br>
+                  STRM 内容形如 <code>http://飞牛IP:18025/play/{fid}/xxx</code><br>
+                  Emby 读 STRM → 请求本服务 → <b>HTTP 302</b> 跳到夸克 m3u8 → 播放器直连夸克。<br>
+                  Docker 监听固定 <code>0.0.0.0:18025</code>（compose 映射），一般不用改。
                 </div>
                 <div class="form-grid">
-                  <div class="fg">
-                    <label>监听 Host</label>
-                    <input id="set-host" class="field" placeholder="0.0.0.0" />
-                  </div>
-                  <div class="fg">
-                    <label>端口</label>
-                    <input id="set-port" class="field" type="number" min="1" max="65535" />
-                  </div>
                   <div class="fg full">
-                    <label>public_base</label>
-                    <input id="set-public-base" class="field" placeholder="http://192.168.x.x:18025" />
-                    <div class="help">必须是 Emby / 客户端能访问到的地址。</div>
+                    <div class="fl">
+                      <label>对外地址 public_base</label>
+                      <span class="meta" id="server-runtime-hint">写入 STRM 的前缀</span>
+                    </div>
+                    <input id="set-public-base" class="field" placeholder="http://192.168.10.14:18025" />
+                    <div class="help">必须是 Emby / 电视 / 手机能访问到的地址。改完后新生成的 STRM 用新前缀；旧 STRM 需重跑任务才会更新。</div>
                   </div>
                   <div class="fg">
-                    <label>流水线间隔（秒）</label>
-                    <input id="set-interval" class="field" type="number" min="60" step="60" />
+                    <label>自动流水线间隔（秒）</label>
+                    <input id="set-interval" class="field" type="number" min="0" step="60" placeholder="0=关闭定时" />
+                    <div class="help">0 表示只手动触发；大于 0 则定时跑转存→STRM。</div>
+                  </div>
+                  <div class="fg">
+                    <label>容器内监听（只读）</label>
+                    <input id="set-host-port-ro" class="field mono" readonly value="0.0.0.0:18025" />
                   </div>
                 </div>
+                <input type="hidden" id="set-host" value="0.0.0.0" />
+                <input type="hidden" id="set-port" value="18025" />
               </section>
 
               <section class="settings-sec" id="sec-strm">

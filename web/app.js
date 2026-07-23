@@ -382,7 +382,9 @@ function fillSettingsForm(d) {
   $("#set-host").value = d.server?.host || "0.0.0.0";
   $("#set-port").value = d.server?.port || 18025;
   $("#set-public-base").value = d.server?.public_base || "";
-  $("#set-interval").value = d.interval_seconds || 1800;
+  $("#set-interval").value = (d.interval_seconds ?? 0);
+  const hpr = document.getElementById("set-host-port-ro");
+  if (hpr) hpr.value = (d.server?.host || "0.0.0.0") + ":" + (d.server?.port || 18025);
     $("#set-video-exts").value = Array.isArray(d.video_exts) ? d.video_exts.join(",") : (d.video_exts || "");
   $("#set-emby-enabled").checked = !!d.emby?.enabled;
   $("#set-emby-url").value = d.emby?.base_url || "";
