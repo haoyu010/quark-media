@@ -122,6 +122,7 @@ func (a *App) routes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/quark/qr/start", a.handleQRStart)
 	mux.HandleFunc("/api/quark/qr/poll", a.handleQRPoll)
 	mux.HandleFunc("/api/quark/qr/cancel", a.handleQRCancel)
+	mux.HandleFunc("/api/quark/dirs", a.handleQuarkDirs)
 	mux.HandleFunc("/api/emby/folders", a.handleEmbyFolders)
 	mux.HandleFunc("/api/emby/refresh", a.handleEmbyRefresh)
 	mux.HandleFunc("/api/tg-inbox", a.handleTgInbox)
@@ -1186,3 +1187,31 @@ func (a *App) handleQRCancel(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, 200, map[string]any{"ok": true})
 }
+
+func (a *App) handleQuarkDirs(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSON(w, 405, map[string]any{"ok": false, "error": "method"})
+		return
+	}
+	if !a.Client.CookieOK() {
+		writeJSON(w, 400, map[string]any{"ok": false, "error": "quark cookie not ready"})
+		return
+	}
+	fid := strings.TrimSpace(r.URL.Query().Get("fid"))
+	if fid == "" {
+		fid = "0"
+	}
+	// optional resolve path -> fid
+	if p := strings.TrimSpace(r.URL.Query().Get("path")); p != "" {
+		if resolved, err := a.Client.PathToFID(p); err == nil {
+			fid = resolved
+		}
+	}
+	dirs, err := a.Client.ListDirs(fid)
+	if err != nil {
+		writeJSON(w, 502, map[string]any{"ok": false, "error": err.Error(), "fid": fid})
+		return
+	}
+	writeJSON(w, 200, map[string]any{"ok": true, "fid": fid, "dirs": dirs})
+}
+

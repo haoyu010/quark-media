@@ -8,7 +8,7 @@ const TITLES = {
   tasks: ["任务", "转存任务（完成后写 STRM）"],
   strm: ["STRM 库", "转存后生成的播放索引"],
   play: ["播放测试", "验证 302 → m3u8 直链"],
-  settings: ["设置", "账号 / QAS / 302 / Emby 配置"],
+  settings: ["设置", "账号 / 收链 / 302 / Emby"],
   logs: ["日志", "流水线与 302 运行摘要"],
 };
 
@@ -375,11 +375,11 @@ function fillSettingsForm(d) {
   $("#murl-hint").textContent = d.m_url_set ? `已配置 ${d.m_url_masked || ""}` : "未配置";
   $("#set-murl-file").value = d.m_url_file || "";
   $("#set-openlist-db").value = d.openlist_db || "";
-  $("#set-use-qas").checked = !!d.use_qas_transfer;
-  $("#set-import-qas").checked = !!d.import_qas_tasks;
-  $("#set-qas-writeback").checked = !!d.qas_write_back;
-  $("#set-qas-root").value = d.qas_root || "";
-  $("#set-qas-config").value = d.qas_config || "";
+  if ($("#set-use-qas")) $("#set-use-qas").checked = !!d.use_qas_transfer;
+  if ($("#set-import-qas")) $("#set-import-qas").checked = !!d.import_qas_tasks;
+  if ($("#set-qas-writeback")) $("#set-qas-writeback").checked = !!d.qas_write_back;
+  if ($("#set-qas-root")) $("#set-qas-root").value = d.qas_root || "";
+  if ($("#set-qas-config")) $("#set-qas-config").value = d.qas_config || "";
   $("#set-host").value = d.server?.host || "0.0.0.0";
   $("#set-port").value = d.server?.port || 18025;
   $("#set-public-base").value = d.server?.public_base || "";
@@ -457,11 +457,11 @@ function collectSettingsPatch() {
     m_url: val("set-murl"),
     tmdb_api_key: val("set-tmdb-key"),
 
-    use_qas_transfer: chk("set-use-qas"),
-    import_qas_tasks: chk("set-import-qas"),
-    qas_write_back: chk("set-qas-writeback"),
-    qas_root: val("set-qas-root"),
-    qas_config: val("set-qas-config"),
+    use_qas_transfer: document.getElementById("set-use-qas") ? chk("set-use-qas") : true,
+    import_qas_tasks: document.getElementById("set-import-qas") ? chk("set-import-qas") : true,
+    qas_write_back: document.getElementById("set-qas-writeback") ? chk("set-qas-writeback") : false,
+    qas_root: document.getElementById("set-qas-root") ? val("set-qas-root") : undefined,
+    qas_config: document.getElementById("set-qas-config") ? val("set-qas-config") : undefined,
     interval_seconds: Number(val("set-interval") || 1800),
     video_exts: val("set-video-exts"),
     server: {
@@ -510,6 +510,7 @@ function collectSettingsPatch() {
 }
 async function saveSettings() {
   const patch = collectSettingsPatch();
+  Object.keys(patch).forEach((k) => { if (patch[k] === undefined) delete patch[k]; });
   if (!patch.cookie) delete patch.cookie;
   if (!patch.tmdb_api_key) delete patch.tmdb_api_key;
   if (!patch.m_url) delete patch.m_url;
@@ -1457,12 +1458,19 @@ function openQrModal() {
   const modal = document.getElementById("qr-modal");
   if (!modal) return;
   modal.hidden = false;
+  modal.style.display = "flex";
+  modal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
 }
 
 function closeQrModal() {
   stopQrPoll();
   const modal = document.getElementById("qr-modal");
-  if (modal) modal.hidden = true;
+  if (!modal) return;
+  modal.hidden = true;
+  modal.style.display = "none";
+  modal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
 }
 
 function setQrUi(state) {
@@ -1479,14 +1487,14 @@ function setQrUi(state) {
       img.hidden = false;
       if (ph) ph.hidden = true;
     } else if (state.showImg === false) {
-      img.removeAttribute("src");
+      try { img.removeAttribute("src"); } catch (_) {}
       img.hidden = true;
       if (ph) ph.hidden = false;
     }
   }
   if (btnStart) {
     btnStart.textContent = state.polling ? "等待扫码…" : "重新生成";
-    btnStart.disabled = !!state.polling && state.status !== "错误" && state.status !== "已过期";
+    btnStart.disabled = !!(state.polling && state.status !== "错误" && state.status !== "已过期");
   }
 }
 
@@ -1534,10 +1542,10 @@ async function pollQrLogin() {
       const data = await api("/api/settings");
       const hint = document.getElementById("cookie-hint");
       if (hint) hint.textContent = data.cookie_set ? `已配置 ${data.cookie_masked || ""}` : "未配置";
-      loadStatus().catch(() => {});
-      loadAccounts().catch(() => {});
+      if (typeof loadStatus === "function") loadStatus().catch(() => {});
+      if (typeof loadAccounts === "function") loadAccounts().catch(() => {});
     } catch (_) {}
-    setTimeout(() => closeQrModal(), 500);
+    setTimeout(() => closeQrModal(), 400);
   } else if (res.status === "expired" || res.status === "error") {
     stopQrPoll();
     _qrId = null;
@@ -1545,15 +1553,55 @@ async function pollQrLogin() {
   }
 }
 
-function cancelQrLogin() {
-  stopQrPoll();
+function cancelQrLogin(ev) {
+  if (ev) {
+    try { ev.preventDefault(); ev.stopPropagation(); } catch (_) {}
+  }
+  try { stopQrPoll(); } catch (_) {}
   const id = _qrId;
   _qrId = null;
   if (id) {
-    api(`/api/quark/qr/cancel?id=${encodeURIComponent(id)}`, { method: "POST" }).catch(() => {});
+    try { api(`/api/quark/qr/cancel?id=${encodeURIComponent(id)}`, { method: "POST" }).catch(() => {}); } catch (_) {}
   }
   closeQrModal();
+  return false;
 }
+
+// 全局可点：不依赖 bind() 是否跑完
+window.cancelQrLogin = cancelQrLogin;
+window.startQrLogin = startQrLogin;
+window.closeQrModal = closeQrModal;
+
+document.addEventListener("click", (e) => {
+  const t = e.target;
+  if (!t || !t.closest) return;
+  if (t.closest("#btn-qr-cancel") || t.closest("#qr-modal-close")) {
+    cancelQrLogin(e);
+    return;
+  }
+  if (t.closest("#btn-qr-open")) {
+    e.preventDefault();
+    startQrLogin().catch((err) => toast(err.message || String(err), "err"));
+    return;
+  }
+  if (t.closest("#btn-qr-refresh") || t.closest("#btn-qr-start")) {
+    e.preventDefault();
+    startQrLogin().catch((err) => toast(err.message || String(err), "err"));
+    return;
+  }
+  // click backdrop
+  if (t.id === "qr-modal") {
+    cancelQrLogin(e);
+  }
+}, true);
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    const modal = document.getElementById("qr-modal");
+    if (modal && !modal.hidden) cancelQrLogin(e);
+  }
+});
+
 
 
 
@@ -1575,4 +1623,121 @@ async function loadCategoryPreview() {
     if (hint) hint.textContent = "加载失败";
   }
 }
+
+
+
+/* ========== Quark folder picker ========== */
+let _folderTargetInput = null;
+let _folderStack = [{ fid: "0", name: "根目录", path: "" }];
+
+function openFolderPicker(inputId) {
+  _folderTargetInput = document.getElementById(inputId);
+  _folderStack = [{ fid: "0", name: "根目录", path: "" }];
+  const modal = document.getElementById("folder-modal");
+  if (!modal) return toast("目录选择器未加载", "err");
+  modal.hidden = false;
+  modal.style.display = "flex";
+  loadFolderList().catch((e) => toast(e.message || String(e), "err"));
+}
+
+function closeFolderPicker() {
+  const modal = document.getElementById("folder-modal");
+  if (modal) {
+    modal.hidden = true;
+    modal.style.display = "none";
+  }
+  _folderTargetInput = null;
+}
+
+function folderCurrent() {
+  return _folderStack[_folderStack.length - 1] || { fid: "0", name: "根目录", path: "" };
+}
+
+function renderFolderCrumb() {
+  const box = document.getElementById("folder-crumb");
+  if (!box) return;
+  box.innerHTML = _folderStack.map((n, i) => {
+    const label = i === 0 ? "根目录" : esc(n.name);
+    return `<button type="button" class="text-btn" data-folder-idx="${i}">${label}</button>${i < _folderStack.length - 1 ? "<span>/</span>" : ""}`;
+  }).join("");
+  box.querySelectorAll("[data-folder-idx]").forEach((btn) => {
+    btn.onclick = () => {
+      const idx = Number(btn.getAttribute("data-folder-idx"));
+      _folderStack = _folderStack.slice(0, idx + 1);
+      loadFolderList().catch((e) => toast(e.message || String(e), "err"));
+    };
+  });
+  const pathEl = document.getElementById("folder-current-path");
+  if (pathEl) pathEl.textContent = "/" + (folderCurrent().path || "");
+}
+
+async function loadFolderList() {
+  const cur = folderCurrent();
+  renderFolderCrumb();
+  const list = document.getElementById("folder-list");
+  if (list) list.innerHTML = `<div class="empty">加载中…</div>`;
+  const data = await api(`/api/quark/dirs?fid=${encodeURIComponent(cur.fid || "0")}`);
+  if (!data.ok) throw new Error(data.error || "列目录失败（请先扫码登录夸克）");
+  const dirs = data.dirs || [];
+  if (!list) return;
+  if (!dirs.length) {
+    list.innerHTML = emptyBox("此目录下没有子文件夹", "可直接点「使用此目录」");
+    return;
+  }
+  list.innerHTML = dirs.map((d) => `
+    <button type="button" class="folder-item" data-fid="${esc(d.fid)}" data-name="${esc(d.name)}">
+      <span class="name">📁 ${esc(d.name)}</span>
+      <span class="meta">进入</span>
+    </button>`).join("");
+  list.querySelectorAll(".folder-item").forEach((btn) => {
+    btn.onclick = () => {
+      const fid = btn.getAttribute("data-fid");
+      const name = btn.getAttribute("data-name") || "";
+      const parent = folderCurrent().path || "";
+      const path = parent ? `${parent}/${name}` : name;
+      _folderStack.push({ fid, name, path });
+      loadFolderList().catch((e) => toast(e.message || String(e), "err"));
+    };
+  });
+}
+
+function confirmFolderPicker() {
+  const cur = folderCurrent();
+  const path = cur.path || "";
+  if (_folderTargetInput) {
+    _folderTargetInput.value = path;
+    _folderTargetInput.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  toast(path ? `已选择：${path}` : "已选择网盘根目录", "ok");
+  closeFolderPicker();
+}
+
+document.addEventListener("click", (e) => {
+  const t = e.target;
+  if (!t || !t.closest) return;
+  if (t.closest("#btn-pick-inbox-root")) {
+    e.preventDefault();
+    openFolderPicker("set-tg-inbox-root");
+    return;
+  }
+  if (t.closest("#btn-clear-inbox-root")) {
+    e.preventDefault();
+    const inp = document.getElementById("set-tg-inbox-root");
+    if (inp) inp.value = "";
+    return;
+  }
+  if (t.closest("#folder-modal-cancel") || t.closest("#folder-modal-close")) {
+    e.preventDefault();
+    closeFolderPicker();
+    return;
+  }
+  if (t.closest("#folder-modal-ok")) {
+    e.preventDefault();
+    confirmFolderPicker();
+    return;
+  }
+  if (t.id === "folder-modal") {
+    closeFolderPicker();
+  }
+}, true);
 

@@ -407,8 +407,7 @@
               <button type="button" class="on" data-sec="account">账号签名</button>
               <button type="button" data-sec="accounts">夸克多账号</button>
               <div class="sn-label">自动化</div>
-              <button type="button" data-sec="qas">QAS 转存</button>
-              <button type="button" data-sec="category">整理分类</button>
+<button type="button" data-sec="category">整理分类</button>
               <button type="button" data-sec="tg">TG 通知/收链</button>
               <button type="button" data-sec="source">TG 频道源</button>
               <button type="button" data-sec="mtproto">MTProto 实时</button>
@@ -505,37 +504,14 @@
                 <pre class="code" id="category-preview">加载中…</pre>
               </section>
 
-<section class="settings-sec" id="sec-qas">
-                <div class="sec-title">
-                  <div>
-                    <h3>QAS 转存引擎</h3>
-                    <p>转存/追更/命名/过滤全部走 quark-auto-save-x 源码。</p>
-                  </div>
-                  <span class="badge-soft">Auto Save</span>
-                </div>
-                <div class="toggle-list">
-                  <label class="toggle-row"><span>启用 QAS 转存</span><input type="checkbox" id="set-use-qas" /><i></i></label>
-                  <label class="toggle-row"><span>导入 QAS 任务列表</span><input type="checkbox" id="set-import-qas" /><i></i></label>
-                  <label class="toggle-row"><span>写回 QAS 配置（一般关闭）</span><input type="checkbox" id="set-qas-writeback" /><i></i></label>
-                </div>
-                <div class="form-grid">
-                  <div class="fg full">
-                    <label>QAS 根目录</label>
-                    <input id="set-qas-root" class="field" placeholder="C:/Users/.../quark-auto-save-x" />
-                  </div>
-                  <div class="fg full">
-                    <label>QAS 配置文件</label>
-                    <input id="set-qas-config" class="field" placeholder=".../config/quark_config.json" />
-                  </div>
-                </div>
-              </section>
+
 
               
               <section class="settings-sec" id="sec-tg">
                 <div class="sec-title">
                   <div>
                     <h3>Telegram 通知 / 自动收链</h3>
-                    <p>写入 QAS 配置。开启「自动收链」后：转发夸克链接到 Bot → TMDB 识别 → 按根目录自动整理路径 → 建任务并转存。</p>
+                    <p>开启「自动收链」后：转发夸克链接到 Bot → TMDB 识别 → 按根目录自动整理路径 → 建任务并转存。</p>
                   </div>
                   <span class="badge-soft">Telegram</span>
                 </div>
@@ -598,9 +574,16 @@
                     <input id="set-tg-proxy-auth" class="field" placeholder="user:pass 可选" />
                   </div>
                   <div class="fg full">
-                    <label>自动收链根目录</label>
-                    <input id="set-tg-inbox-root" class="field" placeholder="例如 影视剧" />
-                    <div class="help">Telegram 自动收链建任务时的固定根目录。会生成 电影/片名、电视剧/剧名/Season 01 等规范路径。</div>
+                    <div class="fl">
+                      <label>自动收链根目录（夸克网盘）</label>
+                      <span class="meta" id="inbox-root-hint">转存落盘位置</span>
+                    </div>
+                    <div class="path-pick-row">
+                      <input id="set-tg-inbox-root" class="field mono" placeholder="例如 影视剧 或 电影/华语" readonly />
+                      <button class="btn soft" type="button" id="btn-pick-inbox-root">选择目录</button>
+                      <button class="btn soft" type="button" id="btn-clear-inbox-root">清空</button>
+                    </div>
+                    <div class="help">点「选择目录」浏览夸克网盘文件夹。收链建任务时会以此为根目录自动整理（电影/剧名/Season…）。</div>
                   </div>
                 </div>
               </section>
@@ -929,12 +912,36 @@
   <div class="toast" id="toast"></div>
   <div class="scrim" id="scrim" hidden></div>
   <script src="/app.js"></script>
+<button class="icon-btn" id="qr-modal-close" type="button" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body qr-modal-body">
+        <div class="qr-img-wrap" id="qr-img-wrap">
+          <img id="qr-image" alt="夸克扫码" width="220" height="220" hidden />
+          <div class="qr-placeholder" id="qr-placeholder">正在生成二维码…</div>
+        </div>
+        <div class="qr-meta">
+          <div class="row"><span>状态</span><b id="qr-status">—</b></div>
+          <div class="help" id="qr-message">等待生成…</div>
+          <label class="chk" style="margin-top:12px;display:flex;gap:8px;align-items:center">
+            <input type="checkbox" id="qr-append-account" />
+            <span>追加为多账号（不覆盖当前活动号）</span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn soft" type="button" id="btn-qr-refresh">刷新二维码</button>
+        <button class="btn soft" type="button" id="btn-qr-cancel">取消</button>
+        <button class="btn primary" type="button" id="btn-qr-start">生成二维码</button>
+      </div>
+    </div>
+  </div>
 
-  <div class="modal" id="qr-modal" hidden>
-    <div class="modal-card qr-modal-card">
+
+  <div class="modal" id="qr-modal" hidden aria-hidden="true">
+    <div class="modal-card qr-modal-card" role="dialog" aria-modal="true" aria-labelledby="qr-modal-title">
       <div class="modal-h">
         <div>
-          <h3>夸克扫码登录</h3>
+          <h3 id="qr-modal-title">夸克扫码登录</h3>
           <p id="qr-modal-sub">请使用夸克 App 扫码并确认</p>
         </div>
         <button class="icon-btn" id="qr-modal-close" type="button" aria-label="关闭">×</button>
@@ -956,7 +963,29 @@
       <div class="modal-actions">
         <button class="btn soft" type="button" id="btn-qr-refresh">刷新二维码</button>
         <button class="btn soft" type="button" id="btn-qr-cancel">取消</button>
-        <button class="btn primary" type="button" id="btn-qr-start">生成二维码</button>
+        <button class="btn primary" type="button" id="btn-qr-start">重新生成</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="modal" id="folder-modal" hidden aria-hidden="true">
+    <div class="modal-card folder-modal-card" role="dialog" aria-modal="true">
+      <div class="modal-h">
+        <div>
+          <h3>选择夸克网盘目录</h3>
+          <p id="folder-modal-sub">点击文件夹进入，选中后点确定</p>
+        </div>
+        <button class="icon-btn" type="button" id="folder-modal-close" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="folder-crumb" id="folder-crumb"><button type="button" class="text-btn" data-folder-root="1">根目录</button></div>
+        <div class="folder-list" id="folder-list"><div class="empty">加载中…</div></div>
+        <div class="help" style="margin-top:10px">当前路径：<code id="folder-current-path">/</code></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn soft" type="button" id="folder-modal-cancel">取消</button>
+        <button class="btn primary" type="button" id="folder-modal-ok">使用此目录</button>
       </div>
     </div>
   </div>

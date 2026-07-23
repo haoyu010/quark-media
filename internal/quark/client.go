@@ -215,6 +215,28 @@ func (c *Client) LS(pdirFID string, pageSize int) ([]map[string]any, error) {
 	return out, nil
 }
 
+
+// ListDirs lists only directories under pdirFID.
+func (c *Client) ListDirs(pdirFID string) ([]map[string]string, error) {
+	items, err := c.LS(pdirFID, 100)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]map[string]string, 0)
+	for _, it := range items {
+		if !isDir(it) {
+			continue
+		}
+		fid := fmt.Sprint(it["fid"])
+		name := fmt.Sprint(it["file_name"])
+		if fid == "" || name == "" || name == "<nil>" {
+			continue
+		}
+		out = append(out, map[string]string{"fid": fid, "name": name})
+	}
+	return out, nil
+}
+
 func (c *Client) PathToFID(p string) (string, error) {
 	p = strings.Trim(strings.TrimSpace(p), "/")
 	if p == "" {
