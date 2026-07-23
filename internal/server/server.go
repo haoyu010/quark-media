@@ -85,12 +85,21 @@ func (a *App) routes(mux *http.ServeMux) {
 			http.NotFound(w, r)
 			return
 		}
-		p := filepath.Join(webRoot, filepath.Clean("/"+r.URL.Path))
-		if r.URL.Path == "/" || !fileExists(p) {
+		reqPath := r.URL.Path
+		if strings.HasPrefix(reqPath, "/static/") {
+			reqPath = "/" + strings.TrimPrefix(reqPath, "/static/")
+		}
+		clean := filepath.Clean("/" + reqPath)
+		if clean == "." {
+			clean = "/"
+		}
+		p := filepath.Join(webRoot, clean)
+		if reqPath == "/" || clean == "/" || !fileExists(p) {
 			http.ServeFile(w, r, filepath.Join(webRoot, "index.html"))
 			return
 		}
-		fs.ServeHTTP(w, r)
+		_ = fs
+		http.ServeFile(w, r, p)
 	})
 	mux.HandleFunc("/play/", a.handlePlay)
 	mux.HandleFunc("/api/status", a.handleStatus)
@@ -811,7 +820,7 @@ func (a *App) handleEmbyRefresh(w http.ResponseWriter, r *http.Request) {
 		pathHint = asStr(body["media_path"])
 	}
 	ec := emby.New(a.Cfg.Emby.BaseURL, a.Cfg.Emby.APIKey).WithMediaRoot(a.Cfg.Emby.Path)
-	// prefer explicit path 鈫?only that media path / matching library
+	// prefer explicit path 閳?only that media path / matching library
 	if pathHint != "" {
 		mp := ec.MapToEmbyPath(a.Cfg.StrmRoot, pathHint)
 		rr := ec.RefreshPaths([]string{mp})
@@ -1074,10 +1083,8 @@ func (a *App) applyCookie(cookie string, appendAccount bool) error {
 	} else if len(a.Cfg.Accounts) == 0 {
 		a.Cfg.Accounts = []string{cookie}
 	} else {
-		// replace active / first account
 		a.Cfg.Accounts[0] = cookie
 	}
-	// sync into qas cookie list when possible
 	_, _ = qas.SaveExtrasMerge(a.Cfg.QASConfig, map[string]any{"cookie": a.Cfg.Accounts})
 	return a.Cfg.Save()
 }
@@ -1093,7 +1100,7 @@ func (a *App) handleQRStart(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 500, map[string]any{"ok": false, "error": err.Error()})
 		return
 	}
-	a.Log.Add("qr login session " + ss.ID[:8] + "…")
+	a.Log.Add("qr login session " + ss.ID[:8])
 	writeJSON(w, 200, map[string]any{
 		"ok": true,
 		"id": ss.ID,
@@ -1129,36 +1136,34 @@ func (a *App) handleQRPoll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out := map[string]any{
-		"ok": true,
-		"id": ss.ID,
-		"status": ss.Status,
-		"message": ss.Message,
-		"nickname": ss.Nickname,
-		"cookie_set": false,
-		"cookie_len": 0,
+		"ok":            true,
+		"id":            ss.ID,
+		"status":        ss.Status,
+		"message":       ss.Message,
+		"nickname":      ss.Nickname,
+		"cookie_set":    false,
+		"cookie_len":    0,
 		"cookie_masked": "",
-		"quark_ok": a.Client.CookieOK(),
-		"mparam_ok": a.Client.MParamOK(),
+		"quark_ok":      a.Client.CookieOK(),
+		"mparam_ok":     a.Client.MParamOK(),
 	}
 	if ss.Status == "confirmed" && ss.Cookie != "" {
 		if err := a.applyCookie(ss.Cookie, appendAcc); err != nil {
 			out["ok"] = false
 			out["error"] = err.Error()
-			out["message"] = "登录成功但保存失败: " + err.Error()
+			out["message"] = "login ok but save failed: " + err.Error()
 			writeJSON(w, 500, out)
 			return
 		}
-		// clear cookie from session after apply (security)
 		quark.CancelQRLogin(id)
-		// re-store confirmed without cookie for one last response? already cancelled
 		out["cookie_set"] = true
 		out["cookie_len"] = len(ss.Cookie)
 		out["cookie_masked"] = config.MaskSecret(ss.Cookie, 8)
 		out["quark_ok"] = a.Client.CookieOK()
 		out["mparam_ok"] = a.Client.MParamOK()
-		out["message"] = "登录成功，Cookie 已写入"
+		out["message"] = "login ok, cookie saved"
 		if ss.Nickname != "" {
-			out["message"] = "登录成功（" + ss.Nickname + "），Cookie 已写入"
+			out["message"] = "login ok (" + ss.Nickname + "), cookie saved"
 		}
 		a.Log.Add("qr login ok cookie_len=" + fmt.Sprint(len(ss.Cookie)))
 	}
