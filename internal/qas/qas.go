@@ -224,10 +224,25 @@ func PublicExtras(ex Extras) map[string]any {
 		pc[k] = v
 	}
 	if tok, ok := pc["TG_BOT_TOKEN"].(string); ok && tok != "" {
+		pc["TG_BOT_TOKEN_masked"] = maskKeep(tok, 4)
 		pc["TG_BOT_TOKEN"] = ""
 		pc["TG_BOT_TOKEN_SET"] = true
+		pc["TG_BOT_TOKEN_set"] = true // compat frontend
 	} else {
-		pc["TG_BOT_TOKEN_SET"] = false
+		// also accept non-string
+		if tok2 := asStr(pc["TG_BOT_TOKEN"]); tok2 != "" {
+			pc["TG_BOT_TOKEN_masked"] = maskKeep(tok2, 4)
+			pc["TG_BOT_TOKEN"] = ""
+			pc["TG_BOT_TOKEN_SET"] = true
+			pc["TG_BOT_TOKEN_set"] = true
+		} else {
+			pc["TG_BOT_TOKEN_SET"] = false
+			pc["TG_BOT_TOKEN_set"] = false
+		}
+	}
+	// normalize user id to string for UI
+	if v, ok := pc["TG_USER_ID"]; ok && v != nil {
+		pc["TG_USER_ID"] = asStr(v)
 	}
 	return map[string]any{
 		"tmdb_api_key":        "",

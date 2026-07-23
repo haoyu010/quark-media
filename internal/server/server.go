@@ -179,6 +179,27 @@ func readJSON(r *http.Request) (map[string]any, error) {
 }
 
 
+
+func (a *App) backupPersistFiles() {
+	dir := filepath.Join(filepath.Dir(a.Cfg.QASConfig), "backups")
+	_ = os.MkdirAll(dir, 0o755)
+	ts := time.Now().Format("20060102-150405")
+	copyFileSafe := func(src, name string) {
+		if src == "" {
+			return
+		}
+		b, err := os.ReadFile(src)
+		if err != nil || len(b) == 0 {
+			return
+		}
+		_ = os.WriteFile(filepath.Join(dir, name+"-"+ts), b, 0o664)
+		// keep latest
+		_ = os.WriteFile(filepath.Join(dir, name+".latest"), b, 0o664)
+	}
+	copyFileSafe(a.Cfg.Path, "config.yaml")
+	copyFileSafe(a.Cfg.QASConfig, "quark_config.json")
+}
+
 func persistInfo(cfg *config.Config) map[string]any {
 	check := func(p string) map[string]any {
 		st, err := os.Stat(p)
@@ -575,8 +596,8 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 		if n, ok := asInt(s["port"]); ok {
 			a.Cfg.Server.Port = n
 		}
-		if _, ok := s["public_base"]; ok {
-			a.Cfg.Server.PublicBase = asStr(s["public_base"])
+		if v := asStr(s["public_base"]); v != "" {
+			a.Cfg.Server.PublicBase = v
 		}
 	}
 	if e, ok := body["emby"].(map[string]any); ok {
@@ -637,6 +658,7 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 500, map[string]any{"ok": false, "error": err.Error()})
 		return
 	}
+	a.backupPersistFiles()
 	view := a.Cfg.SettingsPublic()
 	view["qas_extras"] = qas.PublicExtras(qas.LoadExtras(a.Cfg.QASConfig))
 	writeJSON(w, 200, map[string]any{"ok": true, "settings": view, "persist": persistInfo(a.Cfg)})
@@ -1034,16 +1056,84 @@ func (a *App) handleTgInbox(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) handleTgInboxAction(w http.ResponseWriter, r *http.Request) {
 	act := strings.TrimPrefix(r.URL.Path, "/api/tg-inbox/")
+	act = strings.Trim(act, "/")
 	switch act {
 	case "start", "restart":
 		a.tgRunning = true
 	case "stop":
 		a.tgRunning = false
 	case "test":
-		writeJSON(w, 200, map[string]any{"ok": true, "message": "TG bot test stub"})
+		msg, err := a.testTelegramBot()
+		if err != nil {
+			writeJSON(w, 200, map[string]any{"ok": false, "error": err.Error(), "message": err.Error()})
+			return
+		}
+		writeJSON(w, 200, map[string]any{"ok": true, "message": msg})
 		return
 	}
 	writeJSON(w, 200, map[string]any{"ok": true, "running": a.tgRunning})
+}
+
+func (a *App) testTelegramBot() (string, error) {
+	ex := qas.LoadExtras(a.Cfg.QASConfig)
+	token := asStr(ex.PushConfig["TG_BOT_TOKEN"])
+	user := asStr(ex.PushConfig["TG_USER_ID"])
+	if token == "" {
+		return "", fmt.Errorf("未配置 Bot Token")
+	}
+	if user == "" {
+		return "", fmt.Errorf("未配置 User ID")
+	}
+	host := asStr(ex.PushConfig["TG_API_HOST"])
+	if host == "" {
+		host = "api.telegram.org"
+	}
+	host = strings.TrimPrefix(strings.TrimPrefix(host, "https://"), "http://")
+	host = strings.Trim(host, "/")
+
+	// 1) getMe
+	meURL := fmt.Sprintf("https://%s/bot%s/getMe", host, token)
+	resp, err := http.Get(meURL)
+	if err != nil {
+		return "", fmt.Errorf("getMe 网络错误: %w", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	var me map[string]any
+	_ = json.Unmarshal(body, &me)
+	if resp.StatusCode >= 300 || me["ok"] != true {
+		return "", fmt.Errorf("getMe 失败: %s", strings.TrimSpace(string(body)))
+	}
+	result, _ := me["result"].(map[string]any)
+	uname := asStr(result["username"])
+	if uname == "" {
+		uname = asStr(result["first_name"])
+	}
+
+	// 2) sendMessage
+	sendURL := fmt.Sprintf("https://%s/bot%s/sendMessage", host, token)
+	payload := map[string]any{
+		"chat_id": user,
+		"text":    "Quark Media 测试消息 ✅\nBot 已连通，收链配置有效。",
+	}
+	b, _ := json.Marshal(payload)
+	req, err := http.NewRequest(http.MethodPost, sendURL, strings.NewReader(string(b)))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp2, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("sendMessage 网络错误: %w", err)
+	}
+	defer resp2.Body.Close()
+	body2, _ := io.ReadAll(io.LimitReader(resp2.Body, 1<<20))
+	var sm map[string]any
+	_ = json.Unmarshal(body2, &sm)
+	if resp2.StatusCode >= 300 || sm["ok"] != true {
+		return "", fmt.Errorf("sendMessage 失败(检查 User ID 是否给 Bot 发过 /start): %s", strings.TrimSpace(string(body2)))
+	}
+	return fmt.Sprintf("Bot @%s 已向 %s 发送测试消息", uname, user), nil
 }
 
 func (a *App) tmdbClient() *tmdb.Client {

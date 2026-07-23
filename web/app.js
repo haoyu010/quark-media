@@ -369,83 +369,88 @@ function sanitizePreview(data) {
   return d;
 }
 function fillSettingsForm(d) {
-  $("#set-cookie").value = "";
-  $("#set-murl").value = "";
-  $("#cookie-hint").textContent = d.cookie_set ? `已配置 ${d.cookie_masked || ""}` : "未配置";
-  $("#murl-hint").textContent = d.m_url_set ? `已配置 ${d.m_url_masked || ""}` : "未配置";
-  $("#set-murl-file").value = d.m_url_file || "";
-  $("#set-openlist-db").value = d.openlist_db || "";
-  if ($("#set-use-qas")) $("#set-use-qas").checked = !!d.use_qas_transfer;
-  if ($("#set-import-qas")) $("#set-import-qas").checked = !!d.import_qas_tasks;
-  if ($("#set-qas-writeback")) $("#set-qas-writeback").checked = !!d.qas_write_back;
-  if ($("#set-qas-root")) $("#set-qas-root").value = d.qas_root || "";
-  if ($("#set-qas-config")) $("#set-qas-config").value = d.qas_config || "";
-  $("#set-host").value = d.server?.host || "0.0.0.0";
-  $("#set-port").value = d.server?.port || 18025;
-  $("#set-public-base").value = d.server?.public_base || "";
-  $("#set-interval").value = (d.interval_seconds ?? 0);
-  const hpr = document.getElementById("set-host-port-ro");
-  if (hpr) hpr.value = (d.server?.host || "0.0.0.0") + ":" + (d.server?.port || 18025);
-    $("#set-video-exts").value = Array.isArray(d.video_exts) ? d.video_exts.join(",") : (d.video_exts || "");
-  $("#set-emby-enabled").checked = !!d.emby?.enabled;
-  $("#set-emby-url").value = d.emby?.base_url || "";
-  $("#set-emby-key").value = "";
-  $("#emby-key-hint").textContent = d.emby?.api_key_set ? `已配置 ${d.emby.api_key_masked || ""}` : "未配置";
-  $("#set-emby-path").value = d.emby?.path || "";
-  $("#set-config-path").value = d.config_path || "";
+  d = d || {};
+  const el = (id) => document.getElementById(id);
+  const setVal = (id, v) => { const n = el(id); if (n) n.value = v == null ? "" : String(v); };
+  const setChk = (id, v) => { const n = el(id); if (n) n.checked = !!v; };
+  const setTxt = (id, v) => { const n = el(id); if (n) n.textContent = v == null ? "" : String(v); };
 
-  // QAS 扩展：TG / TMDB / 收链
+  // secrets never echo; only hints
+  setVal("set-cookie", "");
+  setVal("set-murl", "");
+  setTxt("cookie-hint", d.cookie_set ? `已配置 ${d.cookie_masked || ""}` : "未配置");
+  setTxt("murl-hint", d.m_url_set ? `已配置 ${d.m_url_masked || ""}` : "未配置");
+  setVal("set-murl-file", d.m_url_file || "");
+  setVal("set-openlist-db", d.openlist_db || "");
+  setChk("set-use-qas", d.use_qas_transfer);
+  setChk("set-import-qas", d.import_qas_tasks);
+  setChk("set-qas-writeback", d.qas_write_back);
+  setVal("set-qas-root", d.qas_root || "");
+  setVal("set-qas-config", d.qas_config || "");
+  setVal("set-host", d.server?.host || "0.0.0.0");
+  setVal("set-port", d.server?.port || 18025);
+  setVal("set-public-base", d.server?.public_base || "");
+  setVal("set-interval", d.interval_seconds ?? 1800);
+  setVal("set-host-port-ro", (d.server?.host || "0.0.0.0") + ":" + (d.server?.port || 18025));
+  setVal("set-video-exts", Array.isArray(d.video_exts) ? d.video_exts.join(",") : (d.video_exts || ""));
+  setChk("set-emby-enabled", d.emby?.enabled);
+  setVal("set-emby-url", d.emby?.base_url || "");
+  setVal("set-emby-key", "");
+  setTxt("emby-key-hint", d.emby?.api_key_set ? `已配置 ${d.emby.api_key_masked || ""}` : "未配置");
+  setVal("set-emby-path", d.emby?.path || "");
+  setVal("set-config-path", d.config_path || "");
+
   const x = d.qas_extras || {};
   const pc = x.push_config || {};
   const src = x.telegram_source || {};
   const ts = x.task_settings || {};
 
-  const el = (id) => document.getElementById(id);
-  if (el("set-tg-enabled")) el("set-tg-enabled").checked = !!pc.TG_ENABLED;
-  if (el("set-tg-inbox")) el("set-tg-inbox").checked = !!pc.TG_INBOX_AUTO_CREATE;
-  if (el("set-tg-sign")) el("set-tg-sign").checked = !!pc.QUARK_SIGN_NOTIFY;
-  if (el("set-tg-token")) el("set-tg-token").value = "";
-  if (el("tg-token-hint")) el("tg-token-hint").textContent = pc.TG_BOT_TOKEN_set ? `已配置 ${pc.TG_BOT_TOKEN_masked || ""}` : "未配置";
-  if (el("set-tg-userid")) el("set-tg-userid").value = pc.TG_USER_ID || "";
-  if (el("set-push-notify-type")) el("set-push-notify-type").value = x.push_notify_type || "full";
-  if (el("set-tg-api-host")) el("set-tg-api-host").value = pc.TG_API_HOST || "";
-  if (el("set-tg-proxy-host")) el("set-tg-proxy-host").value = pc.TG_PROXY_HOST || "";
-  if (el("set-tg-proxy-port")) el("set-tg-proxy-port").value = pc.TG_PROXY_PORT || "";
-  if (el("set-tg-proxy-auth")) el("set-tg-proxy-auth").value = pc.TG_PROXY_AUTH || "";
-  if (el("set-tg-inbox-root")) el("set-tg-inbox-root").value = ts.telegram_inbox_media_root || "";
+  setChk("set-tg-enabled", pc.TG_ENABLED);
+  setChk("set-tg-inbox", pc.TG_INBOX_AUTO_CREATE);
+  setChk("set-tg-sign", pc.QUARK_SIGN_NOTIFY);
+  setVal("set-tg-token", "");
+  const tokenSet = !!(pc.TG_BOT_TOKEN_SET || pc.TG_BOT_TOKEN_set || pc.TG_BOT_TOKEN);
+  setTxt("tg-token-hint", tokenSet ? `已配置 ${pc.TG_BOT_TOKEN_masked || "••••"}` : "未配置");
+  setVal("set-tg-userid", pc.TG_USER_ID || "");
+  setVal("set-push-notify-type", x.push_notify_type || "full");
+  setVal("set-tg-api-host", pc.TG_API_HOST || "");
+  setVal("set-tg-proxy-host", pc.TG_PROXY_HOST || "");
+  setVal("set-tg-proxy-port", pc.TG_PROXY_PORT || "");
+  setVal("set-tg-proxy-auth", pc.TG_PROXY_AUTH || "");
+  setVal("set-tg-inbox-root", ts.telegram_inbox_media_root || ts.inbox_root || "");
 
-  if (el("set-src-enabled")) el("set-src-enabled").checked = src.enabled !== false;
-  if (el("set-src-replace")) el("set-src-replace").checked = src.auto_replace !== false;
-  if (el("set-src-channels")) el("set-src-channels").value = Array.isArray(src.channels) ? src.channels.join("\n") : (src.channels || "");
-  if (el("set-src-keywords")) el("set-src-keywords").value = Array.isArray(src.keywords) ? src.keywords.join(",") : (src.keywords || "");
-  if (el("set-src-proxy")) el("set-src-proxy").value = src.proxy || "";
-  if (el("set-src-read")) el("set-src-read").value = src.read_limit ?? 99;
-  if (el("set-src-deep")) el("set-src-deep").value = src.deep_limit ?? 600;
-  if (el("set-src-verify")) el("set-src-verify").value = src.verify_limit ?? 5;
+  setChk("set-src-enabled", src.enabled !== false);
+  setChk("set-src-replace", src.auto_replace !== false);
+  setVal("set-src-channels", Array.isArray(src.channels) ? src.channels.join("\n") : (src.channels || ""));
+  setVal("set-src-keywords", Array.isArray(src.keywords) ? src.keywords.join(",") : (src.keywords || ""));
+  setVal("set-src-proxy", src.proxy || "");
+  setVal("set-src-read", src.read_limit ?? 99);
+  setVal("set-src-deep", src.deep_limit ?? 600);
+  setVal("set-src-verify", src.verify_limit ?? 5);
 
-  if (el("set-tmdb-key")) el("set-tmdb-key").value = "";
-  if (el("tmdb-hint")) {
-    const set = !!(x.tmdb_set || x.tmdb_api_key_set || d.tmdb_set);
-    const masked = x.tmdb_api_key_masked || d.tmdb_api_key_masked || "";
-    el("tmdb-hint").textContent = set ? (`已配置 ${masked}`) : "未配置";
-  }
+  setVal("set-tmdb-key", "");
+  const tmdbSet = !!(d.tmdb_set || d.tmdb_api_key_set || x.tmdb_set || x.tmdb_api_key_set);
+  setTxt("tmdb-key-hint", tmdbSet ? `已配置 ${d.tmdb_api_key_masked || x.tmdb_api_key_masked || "••••"}` : "未配置");
 
-  if (el("set-cookies-text")) el("set-cookies-text").value = x.cookies_text || "";
-  if (el("accounts-count")) el("accounts-count").textContent = `${x.accounts_count || 0} 个账号`;
-  if (el("set-category-file")) el("set-category-file").value = d.category_file || "";
-
-  // async previews
-  api("/api/subscriptions").then(s => {
-    const box = null && el("subs-preview");
-    if (box) box.textContent = JSON.stringify(s.subscriptions || [], null, 2);
-  }).catch(()=>{});
-  loadCategoryPreview();
-
-  const sp = document.getElementById("settings-preview"); if (sp) sp.textContent = JSON.stringify(sanitizePreview(d), null, 2);
+  // mtproto block if present
+  const mp = d.mtproto || {};
+  setChk("set-mp-enabled", mp.enabled);
+  setChk("set-mp-auto-apply", mp.auto_apply !== false);
+  setChk("set-mp-qas", mp.also_qas_task !== false);
+  setChk("set-mp-update", mp.update_existing_share);
+  if (el("set-mp-api-id") && !el("set-mp-api-id").value) setVal("set-mp-api-id", mp.api_id || "");
+  if (el("set-mp-phone") && !el("set-mp-phone").value) setVal("set-mp-phone", mp.phone || "");
 }
+
+
 async function loadSettings() {
   const data = await api("/api/settings");
-  fillSettingsForm(data);
+  try {
+    fillSettingsForm(data);
+  } catch (e) {
+    console.error("fillSettingsForm", e);
+    toast("设置回填失败: " + (e.message || e), "err");
+  }
 }
 function collectSettingsPatch() {
   const el = (id) => document.getElementById(id);
@@ -514,11 +519,17 @@ async function saveSettings() {
   if (!patch.cookie) delete patch.cookie;
   if (!patch.tmdb_api_key) delete patch.tmdb_api_key;
   if (!patch.m_url) delete patch.m_url;
-  if (!patch.emby.api_key) delete patch.emby.api_key;
+  if (patch.emby && !patch.emby.api_key) delete patch.emby.api_key;
+  if (patch.server && !patch.server.public_base) delete patch.server.public_base;
   if (patch.qas_extras) {
     if (!patch.qas_extras.tmdb_api_key) delete patch.qas_extras.tmdb_api_key;
     if (patch.qas_extras.push_config && !patch.qas_extras.push_config.TG_BOT_TOKEN) {
       delete patch.qas_extras.push_config.TG_BOT_TOKEN;
+    }
+    // empty inbox root: do not send key so merge keeps old
+    if (patch.qas_extras.task_settings) {
+      const root = (patch.qas_extras.task_settings.telegram_inbox_media_root || "").trim();
+      if (!root) delete patch.qas_extras.task_settings.telegram_inbox_media_root;
     }
   }
   toast("正在保存…");
@@ -527,8 +538,10 @@ async function saveSettings() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(patch),
   });
-  fillSettingsForm(res.settings || {});
-  toast("设置已保存（含 TG/TMDB/收链）", "ok");
+  // 保存后重新拉完整设置，避免用空 settings 覆盖显示
+  await loadSettings();
+  await loadTgStatus().catch(() => {});
+  toast("设置已保存（已写入 Docker 数据卷）", "ok");
   await loadStatus();
 }
 
